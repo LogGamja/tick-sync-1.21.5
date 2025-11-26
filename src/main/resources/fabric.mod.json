@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "tick-sync",
+	"version": "${version}",
+	"name": "Tick Sync",
+	"description": "서버에서 도착한 패킷과 클라이언트 틱 사이의 딜레이를 완화합니다.\nReduces the delay between server packets and client ticks.",
+	"authors": [
+		"LogGamja"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/mcrider-sync/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+          "loggamja.sync.TickSyncMain"
+		],
+		"fabric-datagen": [
+          "loggamja.sync.TickSyncDataGenerator"
+		]
+	},
+	"mixins": [
+		"tick-sync.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.4",
+		"minecraft": ">=1.21.4 <=1.21.10",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+	},
+    "breaks": {
+        "mcrider-sync": "*",
+        "mcrider_bug_fix": "*"
+    }
+}
