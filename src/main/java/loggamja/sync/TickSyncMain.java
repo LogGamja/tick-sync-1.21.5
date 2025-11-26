@@ -29,7 +29,9 @@ public class TickSyncMain implements ModInitializer {
     static long lastServerPacketTime;
 
     public static long avgPacketDelay;
+    public static long packetDeviation;
     List<Long> packetDelayBuffer = new ArrayList<>();
+    static List<Long> packetDeviationBuffer = new ArrayList<>();
 
     float tickRatioConst; // (20 / serverTPS)
     public static float clientTPS = 20;
@@ -49,12 +51,21 @@ public class TickSyncMain implements ModInitializer {
         cfg = TickSyncConfig.INSTANCE;
     }
     public static void onEntityPacket() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        boolean useLastPacket = cfg.useLastPacket && client.getCurrentFps() >= 95;
+        //MinecraftClient client = MinecraftClient.getInstance();
+        //boolean useLastPacket = cfg.useLastPacket && client.getCurrentFps() >= 95;
+        // 나중에 마지막 걸로 바꿔야 합니다
 
-        if (useLastPacket || !isPacketReceivedThisTick)
-            lastServerPacketTime = System.currentTimeMillis();
+        if (!isPacketReceivedThisTick) {
+            long now = System.currentTimeMillis();
+            long delta = now - lastServerPacketTime;
+            float tickRatioConst = (20 / serverTPS);
 
+            if (0 < delta && delta < samplingRange * tickRatioConst) {
+                long deviation = delta - (long)(tickRatioConst * 50);
+                addToPacketDeviationBuffer(deviation);
+            }
+            lastServerPacketTime = now;
+        }
         isPacketReceivedThisTick = true;
     }
     public void onClientTickStart() {
@@ -64,16 +75,23 @@ public class TickSyncMain implements ModInitializer {
             long now = System.currentTimeMillis();
             long packetDelay = now - lastServerPacketTime;
 
-            if (0 < packetDelay && packetDelay < samplingRange * tickRatioConst)
+            if (0 < packetDelay && packetDelay < samplingRange * tickRatioConst) {
                 addToTickDeltaBuffer(packetDelay);
-            else
+            }
+            else {
                 addToTickDeltaBuffer(avgPacketDelay);
+            }
 
             // for debug histogram
             if (0 < packetDelay && packetDelay < samplingRange) {
                 packetDelayHistogram[(int)packetDelay]++;
             }
-            avgPacketDelay = (long)packetDelayBuffer.stream().mapToLong(Long::longValue).average().orElse(0);
+            avgPacketDelay = getAvgPacketDelay();
+            packetDeviation = getPacketDeviation();
+            if (packetDeviation > 16) {
+                packetDeviationBuffer.clear();
+                addToPacketDeviationBuffer(0);
+            }
         }
         isPacketReceivedThisTick = false;
 
@@ -93,6 +111,40 @@ public class TickSyncMain implements ModInitializer {
         while (packetDelayBuffer.size() > tickBufferSize) {
             packetDelayBuffer.removeFirst();
         }
+    }
+    static void addToPacketDeviationBuffer(long newDelta) {
+        int tickBufferSize = 100;
+        packetDeviationBuffer.add(newDelta);
+
+        while (packetDeviationBuffer.size() > tickBufferSize) {
+            packetDeviationBuffer.removeFirst();
+        }
+    }
+    long getAvgPacketDelay() {
+        long avgPacketDelay = 0;
+
+        int size = packetDelayBuffer.size();
+        if (size > 0) {
+            long sum = 0;
+            for (Long v : packetDelayBuffer) {
+                sum += v;
+            }
+            avgPacketDelay = sum / size;
+        }
+        return avgPacketDelay;
+    }
+    long getPacketDeviation() {
+        int size = packetDeviationBuffer.size();
+        if (size == 0) return 12;
+
+        long min = Long.MAX_VALUE;
+        long max = Long.MIN_VALUE;
+
+        for (Long v : packetDeviationBuffer) {
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+        return Math.max(8, max - min);
     }
     void onClientTickEnd() {
         if (isTickRateChangedLastTick) {
@@ -170,6 +222,7 @@ public class TickSyncMain implements ModInitializer {
 
         packetDelayBuffer.clear();
         addToTickDeltaBuffer(cfg.tickSyncMargin);
+
         avgPacketDelay = cfg.tickSyncMargin;
         isTickRateChangedLastTick = true;
     }

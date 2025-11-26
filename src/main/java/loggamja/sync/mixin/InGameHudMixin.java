@@ -64,9 +64,18 @@ public abstract class InGameHudMixin {
             int c3fr = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3r, 0.0), 1.0/2.2)), 0, 255);
             int c3fg = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3g, 0.0), 1.0/2.2)), 0, 255);
             int c3fb = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3b, 0.0), 1.0/2.2)), 0, 255);
-            context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1)  , histogramHeight, c3fr<<16|c3fg<<8|c3fb);
+            context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3fr<<16|c3fg<<8|c3fb);
         }
-        //final Identifier K_HUD_ID =Identifier.of("khudexample", "k_hud");
+
+        String text4 = "Packet Deviation: " + TickSyncMain.packetDeviation + "ms";
+
+        int x4 = client.getWindow().getScaledWidth() - 40;
+        int y4 = 30;
+        x4 -= client.textRenderer.getWidth(text);
+
+        context.drawTextWithShadow(client.textRenderer, text4, x4, y4, 0xFFFF00);
+
+        final Identifier K_HUD_ID =Identifier.of("khudexample", "k_hud");
 
         //HudElementRegistry.attachElementBefore(
         //
