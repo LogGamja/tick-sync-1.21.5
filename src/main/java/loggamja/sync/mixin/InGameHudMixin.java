@@ -33,23 +33,27 @@ public abstract class InGameHudMixin {
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;
         if (!cfg.useDebugScreen) return;
 
+        final int space = 8;
+        final int term = 10;
+
+        // 안정성
+        String text4 = "Stability: " + TickSyncMain.INSTANCE.packetRange + "ms";
+        int x4 = client.getWindow().getScaledWidth() - space;
+        int y4 = space ;
+        x4 -= client.textRenderer.getWidth(text4);
+        context.drawTextWithShadow(client.textRenderer, text4, x4, y4, 0xFFFF00);
+
+        // 딜레이
         String text = "Tick Delay: " + TickSyncMain.INSTANCE.avgPacketDelay + "ms";
-
-        int x = client.getWindow().getScaledWidth() - 10;
-        int y = 10;
+        int x = client.getWindow().getScaledWidth() - space;
+        int y = space + term;
         x -= client.textRenderer.getWidth(text);
-
-        if (TickSyncMain.INSTANCE.avgPacketDelay > 25) {
-            context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFFFF00);
-        }
-        else {
-            context.drawTextWithShadow(client.textRenderer, text, x, y, 0x00FFFF);
-        }
+        context.drawTextWithShadow(client.textRenderer, text, x, y, 0x00FFFF);
 
         // histogram by towercrain
-        var histogramHeight = 20;
+        var histogramHeight = space + term * 2;
         var histogramSize = TickSyncMain.INSTANCE.samplingRange;
-        int x2 = client.getWindow().getScaledWidth() - 10;
+        int x2 = client.getWindow().getScaledWidth() - space;
         x2 -= histogramSize;
 
         for (int i = 0; i < histogramSize; i++) {
@@ -65,14 +69,6 @@ public abstract class InGameHudMixin {
             int c3fb = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3b, 0.0), 1.0/2.2)), 0, 255);
             context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3fr<<16|c3fg<<8|c3fb);
         }
-
-        String text4 = "Packet Deviation: " + TickSyncMain.INSTANCE.packetRange + "ms";
-
-        int x4 = client.getWindow().getScaledWidth() - 40;
-        int y4 = 30;
-        x4 -= client.textRenderer.getWidth(text);
-
-        context.drawTextWithShadow(client.textRenderer, text4, x4, y4, 0xFFFF00);
 
         final Identifier K_HUD_ID =Identifier.of("khudexample", "k_hud");
 

@@ -15,12 +15,12 @@ public class TickSyncSetting extends Screen {
 
     static String[][] TOGGLE_OPTIONS = {
             { "TickSync: OFF", "TickSync: ON" },
-            { "Sync Margin: Precise(8ms)", "Sync Margin: Default(10ms)", "Sync Margin: Wide(12ms)", "Sync Margin: Stable(14ms)" },
+            { "Margin: Fixed(12ms)", "Margin: Auto(default)" },
             { "Debug: OFF", "Debug: ON" }
     };
     static String[] tooltips = {
             "Toggles all functions of TickSync.",
-            "Select bigger margin when internet quality bad.",
+            "Select control method related with internet quality.",
             "Toggles debug screen at the corner."
     };
 
@@ -36,12 +36,12 @@ public class TickSyncSetting extends Screen {
         if (Objects.equals(lm.getLanguage(), "ko_kr")) {
             TOGGLE_OPTIONS = new String[][] {
                     { "틱 동기화: 꺼짐", "틱 동기화: 켜짐" },
-                    { "정확도: 정확(8ms)", "정확도: 기본(10ms)", "정확도: 여유(12ms)", "정확도: 안정(14ms)" },
+                    { "정확도: 고정(12ms)", "정확도: 자동(기본)" },
                     { "디버그: 꺼짐", "디버그: 켜짐" }
             };
             tooltips = new String[] {
                     "모든 틱 동기화 기능을 켜거나 끕니다.",
-                    "인터넷 품질이 나쁠수록 큰 수치를 선택하세요.",
+                    "인터넷 품질과 관련된 제어 방법을 결정합니다.",
                     "우상단 디버그 화면을 켜거나 끕니다."
             };
         }
@@ -61,7 +61,7 @@ public class TickSyncSetting extends Screen {
         // Config load
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;
         toggleIndices[0] = cfg.isTickSyncOn ? 1 : 0;
-        toggleIndices[1] = (cfg.tickSyncMargin - 8) / 2;
+        toggleIndices[1] = cfg.useAutoMargin ? 1 : 0;
         toggleIndices[2] = cfg.useDebugScreen ? 1 : 0;
 
         // Buttons
@@ -104,8 +104,7 @@ public class TickSyncSetting extends Screen {
             cfg.isTickSyncOn = (index != 0);
         }
         else if (button == 1) {
-            cfg.tickSyncMargin = 8;
-            cfg.tickSyncMargin += index * 2;
+            cfg.useAutoMargin = (index != 0);
         }
         else if (button == 2) {
             cfg.useDebugScreen = (index != 0);

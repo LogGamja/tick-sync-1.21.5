@@ -14,7 +14,7 @@ public class TickSyncConfig {
     private static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "tick-sync-config.json");
 
     public boolean isTickSyncOn = true;
-    public int tickSyncMargin = 10;
+    public boolean useAutoMargin = true;
     public boolean useDebugScreen = false;
 
     // 싱글톤
@@ -26,7 +26,7 @@ public class TickSyncConfig {
             TickSyncConfig loaded = GSON.fromJson(reader, TickSyncConfig.class);
             if (loaded != null) {
                 this.isTickSyncOn = loaded.isTickSyncOn;
-                this.tickSyncMargin = loaded.tickSyncMargin;
+                this.useAutoMargin = loaded.useAutoMargin;
                 this.useDebugScreen = loaded.useDebugScreen;
             }
         } catch (IOException e) {
