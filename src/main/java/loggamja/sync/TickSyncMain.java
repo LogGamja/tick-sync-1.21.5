@@ -17,51 +17,54 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class TickSyncMain implements ModInitializer {
     public static final String MOD_ID = "tick-sync";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     boolean isTickRateChangedLastTick;
-    public static boolean isPacketReceivedThisTick;
+    boolean isPacketReceivedThisTick;
 
     long lastSyncTime = System.currentTimeMillis();
-    static long lastServerPacketTime;
+    long lastServerPacketTime;
 
-    public static long avgPacketDelay;
-    public static long packetDeviation;
-    List<Long> packetDelayBuffer = new ArrayList<>();
-    static List<Long> packetDeviationBuffer = new ArrayList<>();
+    public int avgPacketDelay;
+    public int packetDeviation;
+    List<Integer> packetDelayBuffer = new ArrayList<>();
+    List<Integer> packetDeviationBuffer = new ArrayList<>();
 
     float tickRatioConst; // (20 / serverTPS)
-    public static float clientTPS = 20;
-    public static float serverTPS = 20;
+    public float clientTPS = 20;
+    public float serverTPS = 20;
 
-    public static final int samplingRange = 55;
-    public static float[] packetDelayHistogram = new float[samplingRange];
+    public final int samplingRange = 55;
+    public float[] packetDelayHistogram = new float[samplingRange];
 
     static TickSyncConfig cfg;
+    public static final TickSyncMain INSTANCE = new TickSyncMain();
 
     @Override
     public void onInitialize() {
-        ClientTickEvents.START_CLIENT_TICK.register(client -> onClientTickStart());
-        ClientTickEvents.END_CLIENT_TICK.register(client -> onClientTickEnd());
+        ClientTickEvents.START_CLIENT_TICK.register(client -> INSTANCE.onClientTickStart());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> INSTANCE.onClientTickEnd());
 
         TickSyncConfig.INSTANCE.load();
         cfg = TickSyncConfig.INSTANCE;
     }
-    public static void onEntityPacket() {
+    public void onEntityPacket() {
+
         //MinecraftClient client = MinecraftClient.getInstance();
         //boolean useLastPacket = cfg.useLastPacket && client.getCurrentFps() >= 95;
         // 나중에 마지막 걸로 바꿔야 합니다
-
         if (!isPacketReceivedThisTick) {
             long now = System.currentTimeMillis();
-            long delta = now - lastServerPacketTime;
+
+            int delta = (int)(now - lastServerPacketTime);
             float tickRatioConst = (20 / serverTPS);
 
             if (0 < delta && delta < samplingRange * tickRatioConst) {
-                long deviation = delta - (long)(tickRatioConst * 50);
+                int deviation = (int)(delta - (tickRatioConst * 50));
                 addToPacketDeviationBuffer(deviation);
             }
             lastServerPacketTime = now;
@@ -73,7 +76,8 @@ public class TickSyncMain implements ModInitializer {
 
         if (isPlayingInGame()) {
             long now = System.currentTimeMillis();
-            long packetDelay = now - lastServerPacketTime;
+            int packetDelay = (int)(now - lastServerPacketTime);
+
 
             if (0 < packetDelay && packetDelay < samplingRange * tickRatioConst) {
                 addToTickDeltaBuffer(packetDelay);
@@ -84,7 +88,7 @@ public class TickSyncMain implements ModInitializer {
 
             // for debug histogram
             if (0 < packetDelay && packetDelay < samplingRange) {
-                packetDelayHistogram[(int)packetDelay]++;
+                packetDelayHistogram[packetDelay]++;
             }
             avgPacketDelay = getAvgPacketDelay();
             packetDeviation = getPacketDeviation();
@@ -100,11 +104,11 @@ public class TickSyncMain implements ModInitializer {
             packetDelayHistogram[i] *= 0.95f;
         }
     }
-    public static boolean isPlayingInGame() {
+    public boolean isPlayingInGame() {
         MinecraftClient client = MinecraftClient.getInstance();
         return client.world != null && client.player != null && !client.isPaused() && client.getCurrentFps() >= 40;
     }
-    void addToTickDeltaBuffer(long newDelta) {
+    void addToTickDeltaBuffer(int newDelta) {
         packetDelayBuffer.add(newDelta);
 
         int tickBufferSize = cfg.tickSyncMargin;
@@ -112,7 +116,7 @@ public class TickSyncMain implements ModInitializer {
             packetDelayBuffer.removeFirst();
         }
     }
-    static void addToPacketDeviationBuffer(long newDelta) {
+    void addToPacketDeviationBuffer(int newDelta) {
         int tickBufferSize = 100;
         packetDeviationBuffer.add(newDelta);
 
@@ -120,32 +124,45 @@ public class TickSyncMain implements ModInitializer {
             packetDeviationBuffer.removeFirst();
         }
     }
-    long getAvgPacketDelay() {
-        long avgPacketDelay = 0;
+    int getAvgPacketDelay() {
+        int avgPacketDelay = 0;
 
         int size = packetDelayBuffer.size();
         if (size > 0) {
-            long sum = 0;
-            for (Long v : packetDelayBuffer) {
+            int sum = 0;
+            for (int v : packetDelayBuffer) {
                 sum += v;
             }
             avgPacketDelay = sum / size;
         }
         return avgPacketDelay;
     }
-    long getPacketDeviation() {
-        int size = packetDeviationBuffer.size();
-        if (size == 0) return 12;
+    int getPacketDeviation() {
+        if (packetDeviationBuffer.isEmpty()) return 10;
+        System.out.println(packetDeviationBuffer);
+        int med = (int)simpleMedian(packetDeviationBuffer);
 
-        long min = Long.MAX_VALUE;
-        long max = Long.MIN_VALUE;
+        List<Integer> deviations = packetDeviationBuffer.stream()
+                .map(v -> Math.abs(v - med))
+                .collect(Collectors.toList());
 
-        for (Long v : packetDeviationBuffer) {
-            if (v < min) min = v;
-            if (v > max) max = v;
-        }
-        return Math.max(8, max - min);
+        return (int)simpleMedian(deviations) * 4;
     }
+    float simpleMedian(List<Integer> values) {
+        // 원본을 건드리지 않고 복사본 생성
+        List<Integer> sorted = new ArrayList<>(values);
+        Collections.sort(sorted);
+
+        int n = sorted.size();
+        if (n % 2 == 1) {
+            // 홀수 개일 때 중앙값
+            return sorted.get(n / 2);
+        } else {
+            // 짝수 개일 때 중앙 두 값의 평균
+            return (float)(sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2;
+        }
+    }
+
     void onClientTickEnd() {
         if (isTickRateChangedLastTick) {
             isTickRateChangedLastTick = false;
@@ -207,7 +224,7 @@ public class TickSyncMain implements ModInitializer {
         shiftNextTickDuration(tickToPush);
     }
     // util
-    public static long quantizeToFrame(float margin) {
+    public long quantizeToFrame(float margin) {
         MinecraftClient client = MinecraftClient.getInstance();
         float frameDuration = 1000f / client.getCurrentFps();
 
@@ -237,7 +254,7 @@ public class TickSyncMain implements ModInitializer {
         }
     }
     // -------------
-    public static boolean isMinecraftAtLeast(String versionString) {
+    public boolean isMinecraftAtLeast(String versionString) {
         Optional<ModMetadata> mcMeta = FabricLoader.getInstance()
                 .getModContainer("minecraft")
                 .map(container -> container.getMetadata());

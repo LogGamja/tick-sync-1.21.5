@@ -15,7 +15,6 @@ public class TickSyncConfig {
 
     public boolean isTickSyncOn = true;
     public int tickSyncMargin = 10;
-    public boolean useLastPacket = true;
     public boolean useDebugScreen = false;
 
     // 싱글톤
@@ -28,7 +27,6 @@ public class TickSyncConfig {
             if (loaded != null) {
                 this.isTickSyncOn = loaded.isTickSyncOn;
                 this.tickSyncMargin = loaded.tickSyncMargin;
-                this.useLastPacket = loaded.useLastPacket; // secret option!
                 this.useDebugScreen = loaded.useDebugScreen;
             }
         } catch (IOException e) {

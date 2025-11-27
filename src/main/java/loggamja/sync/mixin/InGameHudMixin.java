@@ -34,13 +34,13 @@ public abstract class InGameHudMixin {
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;
         if (!cfg.useDebugScreen) return;
 
-        String text = "Tick Delay: " + TickSyncMain.avgPacketDelay + "ms";
+        String text = "Tick Delay: " + TickSyncMain.INSTANCE.avgPacketDelay + "ms";
 
         int x = client.getWindow().getScaledWidth() - 10;
         int y = 10;
         x -= client.textRenderer.getWidth(text);
 
-        if (TickSyncMain.avgPacketDelay > 25) {
+        if (TickSyncMain.INSTANCE.avgPacketDelay > 25) {
             context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFFFF00);
         }
         else {
@@ -49,12 +49,12 @@ public abstract class InGameHudMixin {
 
         // histogram by towercrain
         var histogramHeight = 20;
-        var histogramSize = TickSyncMain.samplingRange;
+        var histogramSize = TickSyncMain.INSTANCE.samplingRange;
         int x2 = client.getWindow().getScaledWidth() - 10;
         x2 -= histogramSize;
 
         for (int i = 0; i < histogramSize; i++) {
-            float c3Intensity = TickSyncMain.packetDelayHistogram[i];
+            float c3Intensity = TickSyncMain.INSTANCE.packetDelayHistogram[i];
             float c3r = c3Intensity;
             float c3g = c3Intensity;
             float c3b = c3Intensity;
@@ -67,7 +67,7 @@ public abstract class InGameHudMixin {
             context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3fr<<16|c3fg<<8|c3fb);
         }
 
-        String text4 = "Packet Deviation: " + TickSyncMain.packetDeviation + "ms";
+        String text4 = "Packet Deviation: " + TickSyncMain.INSTANCE.packetDeviation + "ms";
 
         int x4 = client.getWindow().getScaledWidth() - 40;
         int y4 = 30;

@@ -14,10 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ClientPlayNetworkHandlerMixin {
     @Inject(method = "onEntity", at = @At("HEAD"))
     private void onEntityUpdate(EntityS2CPacket packet, CallbackInfo ci) {
-        TickSyncMain.onEntityPacket();
+        TickSyncMain.INSTANCE.onEntityPacket();
     }
     @Inject(method = "onUpdateTickRate", at = @At("HEAD"))
     private void onUpdateTickRate(UpdateTickRateS2CPacket packet, CallbackInfo ci) {
-        TickSyncMain.serverTPS = packet.tickRate();
+        TickSyncMain.INSTANCE.serverTPS = packet.tickRate();
     }
 }

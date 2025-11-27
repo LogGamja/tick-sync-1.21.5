@@ -22,8 +22,8 @@ public abstract class MinecraftClientMixin {
         if (this.world != null) {
             TickManager tickManager = this.world.getTickManager();
             if (tickManager.shouldTick()) {
-                if (TickSyncMain.clientTPS > 20) {
-                    return 1000 / TickSyncMain.clientTPS;
+                if (TickSyncMain.INSTANCE.clientTPS > 20) {
+                    return 1000 / TickSyncMain.INSTANCE.clientTPS;
                 }
                 else {
                     return Math.max(millis, tickManager.getMillisPerTick());
