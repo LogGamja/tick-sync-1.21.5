@@ -22,6 +22,7 @@ public class TickSyncConfig {
 
     public void load() {
         if (!CONFIG_FILE.exists()) return;
+
         try (FileReader reader = new FileReader(CONFIG_FILE)) {
             TickSyncConfig loaded = GSON.fromJson(reader, TickSyncConfig.class);
             if (loaded != null) {

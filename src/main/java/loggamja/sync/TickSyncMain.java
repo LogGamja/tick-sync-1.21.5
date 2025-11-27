@@ -37,7 +37,7 @@ public class TickSyncMain implements ModInitializer {
     // 상수 정의
     final int tickBufferSize = 10;
     final int rangeBufferSize = 100;
-    final int outlierLimit = 8;
+    final int outlierLimit = 10;
     final int thresholdOffset = 4;
     final int matchSyncOffset = 0;
     public final int samplingRange = 55;
@@ -49,7 +49,7 @@ public class TickSyncMain implements ModInitializer {
     static TickSyncConfig cfg;
     public static final TickSyncMain INSTANCE = new TickSyncMain();
 
-    int getPacketMargin() { return cfg.useAutoMargin ? Math.clamp(packetRange, 8, 20) : 12; }
+    int getPacketMargin() { return cfg.useAutoMargin ? Math.clamp(packetRange, 6, 20) : 12; }
     int getTickDuration() { return (int)(1000 / serverTPS); }
     float getFrameDuration() { return 1000f / MinecraftClient.getInstance().getCurrentFps(); }
     float applyRatio(float x) { return x * (20 / serverTPS); }
