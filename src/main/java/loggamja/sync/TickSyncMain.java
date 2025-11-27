@@ -8,6 +8,7 @@ import net.fabricmc.loader.api.VersionParsingException;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.world.tick.TickManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,23 +25,30 @@ public class TickSyncMain implements ModInitializer {
     boolean isTickRateChangedLastTick;
     boolean isPacketReceivedThisTick;
 
+    public int packetRange;
+    public int avgPacketDelay;
+
     long lastSyncTime = System.currentTimeMillis();
     long lastServerPacketTime;
 
-    public int avgPacketDelay;
-    public int packetRange;
-    List<Integer> packetDelayBuffer = new ArrayList<>();
-    List<Integer> packetRangeBuffer = new ArrayList<>();
-
-    float tickRatioConst; // (20 / serverTPS)
     public float clientTPS = 20;
     public float serverTPS = 20;
 
+    // 상수 정의
+    final int tickBufferSize = 10;
+    final int rangeBufferSize = 100;
+    final int outlierLimit = 8;
     public final int samplingRange = 55;
+
+    List<Integer> packetDelayBuffer = new ArrayList<>();
+    List<Integer> packetRangeBuffer = new ArrayList<>();
     public float[] packetDelayHistogram = new float[samplingRange];
 
     static TickSyncConfig cfg;
     public static final TickSyncMain INSTANCE = new TickSyncMain();
+
+    int getTickDuration() { return (int)(1000 / serverTPS); }
+    float applyRatio(float x) { return x * (20 / serverTPS); }
 
     @Override
     public void onInitialize() {
@@ -57,26 +65,23 @@ public class TickSyncMain implements ModInitializer {
         // 나중에 마지막 걸로 바꿔야 합니다
         if (!isPacketReceivedThisTick) {
             long now = System.currentTimeMillis();
-
             int delta = (int)(now - lastServerPacketTime);
-            float tickRatioConst = (20 / serverTPS);
 
-            if (0 < delta && delta < samplingRange * tickRatioConst) {
-                int deviation = (int)(delta - (tickRatioConst * 50));
-                addToPacketDeviationBuffer(deviation);
+            if (0 < delta && delta < applyRatio(samplingRange)) {
+                int deviation = delta - (int)(applyRatio(1) * 50);
+                addToPacketRangeBuffer(deviation);
             }
             lastServerPacketTime = now;
         }
         isPacketReceivedThisTick = true;
     }
     public void onClientTickStart() {
-        tickRatioConst = 20 / serverTPS;
+
         if (isPlayingInGame()) {
             long now = System.currentTimeMillis();
             int packetDelay = (int)(now - lastServerPacketTime);
 
-
-            if (0 < packetDelay && packetDelay < samplingRange * tickRatioConst) {
+            if (0 < packetDelay && packetDelay < applyRatio(samplingRange)) {
                 addToTickDeltaBuffer(packetDelay);
             }
             else {
@@ -87,35 +92,31 @@ public class TickSyncMain implements ModInitializer {
             if (0 < packetDelay && packetDelay < samplingRange) {
                 packetDelayHistogram[packetDelay]++;
             }
+            // for debug histogram
+            for (int i = 0; i < samplingRange; i++) {
+                packetDelayHistogram[i] *= 0.95f;
+            }
             avgPacketDelay = getAvgPacketDelay();
             packetRange = getPacketRange();
         }
         isPacketReceivedThisTick = false;
-
-        // for debug histogram
-        for(int i = 0; i < samplingRange; i++) {
-            packetDelayHistogram[i] *= 0.95f;
-        }
     }
     public boolean isPlayingInGame() {
         MinecraftClient client = MinecraftClient.getInstance();
         return client.world != null && client.player != null && !client.isPaused() && client.getCurrentFps() >= 40;
     }
     void addToTickDeltaBuffer(int newDelta) {
-        int tickBufferSize = 10;
         packetDelayBuffer.add(newDelta);
 
-        while (packetDelayBuffer.size() > tickBufferSize) {
+        if (packetDelayBuffer.size() > tickBufferSize) {
             packetDelayBuffer.removeFirst();
         }
     }
-    void addToPacketDeviationBuffer(int newDelta) {
-        int tickBufferSize = 100;
+    void addToPacketRangeBuffer(int newDelta) {
         packetRangeBuffer.add(newDelta);
 
-        while (packetRangeBuffer.size() > tickBufferSize) {
-            var threshold = 8;
-            if (Math.abs(newDelta) > threshold) {
+        if (packetRangeBuffer.size() > rangeBufferSize) {
+            if (Math.abs(newDelta) > outlierLimit) {
                 packetRangeBuffer.removeLast();
             }
             else {
@@ -124,30 +125,26 @@ public class TickSyncMain implements ModInitializer {
         }
     }
     int getAvgPacketDelay() {
-        int avgPacketDelay = 0;
-
         int size = packetDelayBuffer.size();
-        if (size > 0) {
-            int sum = 0;
-            for (int v : packetDelayBuffer) {
-                sum += v;
-            }
-            avgPacketDelay = sum / size;
+        if (size == 0) return 10;
+
+        int sum = 0;
+        for (int v : packetDelayBuffer) {
+            sum += v;
         }
-        return avgPacketDelay;
+        return sum / size;
     }
     int getPacketRange() {
         int size = packetRangeBuffer.size();
-        if (size == 0) return 12;
+        if (size < 50) return 14;
 
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
 
-        for (Integer v : packetRangeBuffer) {
-            if (v < min) min = v;
-            if (v > max) max = v;
+        for (int i : packetRangeBuffer) {
+            if (i < min) min = i;
+            if (i > max) max = i;
         }
-        //return Math.max(8, max - min);
         return Math.clamp(max - min, 6, 20);
     }
     void onClientTickEnd() {
@@ -172,7 +169,7 @@ public class TickSyncMain implements ModInitializer {
         float min = Collections.min(packetDelayBuffer);
         float max = Collections.max(packetDelayBuffer);
 
-        return (packetDelayBuffer.size() >= tickBufferSize) && (max - min) > (35 * tickRatioConst) && serverTPS <= 40;
+        return (packetDelayBuffer.size() >= tickBufferSize) && (max - min) > (applyRatio(35)) && serverTPS <= 40;
     }
     void fixWeirdSync() {
         if (packetDelayBuffer.isEmpty()) return;
@@ -180,19 +177,19 @@ public class TickSyncMain implements ModInitializer {
         lastSyncTime = System.currentTimeMillis();
 
         float min = Math.min(cfg.tickSyncMargin / 2, Collections.min(packetDelayBuffer));
-        long tickToPush = quantizeToFrame((cfg.tickSyncMargin - min) * tickRatioConst);
+        int tickToPush = quantizeToFrame(applyRatio((cfg.tickSyncMargin - min)));
         shiftNextTickDuration(tickToPush);
     }
     boolean isTickSyncRequired() {
         return getThreshold() < avgPacketDelay && serverTPS <= 40;
     }
-    long getThreshold() {
+    int getThreshold() {
         MinecraftClient client = MinecraftClient.getInstance();
         float frameDuration = 1000f / client.getCurrentFps();
-        long threshold = (long)(cfg.tickSyncMargin * tickRatioConst) + 4;
+        int threshold = (int)(applyRatio(cfg.tickSyncMargin)) + 4;
 
         if (threshold < frameDuration) {
-            return (long)(frameDuration * 1.5f);
+            return (int)(frameDuration * 1.5f);
         }
         else {
             return threshold;
@@ -200,22 +197,20 @@ public class TickSyncMain implements ModInitializer {
     }
     void matchTickSync() {
         lastSyncTime = System.currentTimeMillis();
+        int tickToPush = (getTickDuration() - avgPacketDelay) + quantizeToFrame(applyRatio(cfg.tickSyncMargin));
 
-        int tickDuration = (int)(1000 / serverTPS);
-        long tickToPush = (tickDuration - avgPacketDelay) + quantizeToFrame(cfg.tickSyncMargin * tickRatioConst);
-
-        if (tickToPush > tickDuration / 2)
-            tickToPush -= tickDuration; // pull tick
+        if (tickToPush > getTickDuration() / 2)
+            tickToPush -= getTickDuration(); // pull tick
 
         shiftNextTickDuration(tickToPush);
     }
     // util
-    public long quantizeToFrame(float margin) {
+    int quantizeToFrame(float margin) {
         MinecraftClient client = MinecraftClient.getInstance();
         float frameDuration = 1000f / client.getCurrentFps();
 
-        if (margin < frameDuration) return (long)frameDuration;
-        return (long)(Math.round(margin / frameDuration) * frameDuration);
+        if (margin < frameDuration) return (int)frameDuration;
+        return (int)(Math.round(margin / frameDuration) * frameDuration);
     }
     void shiftNextTickDuration(long term) {
         long tickDuration = (long)(1000 / serverTPS);
