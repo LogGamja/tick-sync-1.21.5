@@ -2,7 +2,6 @@ package loggamja.sync;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class TickSyncMain implements ModInitializer {
     public static final String MOD_ID = "tick-sync";
@@ -30,9 +28,9 @@ public class TickSyncMain implements ModInitializer {
     long lastServerPacketTime;
 
     public int avgPacketDelay;
-    public int packetDeviation;
+    public int packetRange;
     List<Integer> packetDelayBuffer = new ArrayList<>();
-    List<Integer> packetDeviationBuffer = new ArrayList<>();
+    List<Integer> packetRangeBuffer = new ArrayList<>();
 
     float tickRatioConst; // (20 / serverTPS)
     public float clientTPS = 20;
@@ -73,7 +71,6 @@ public class TickSyncMain implements ModInitializer {
     }
     public void onClientTickStart() {
         tickRatioConst = 20 / serverTPS;
-
         if (isPlayingInGame()) {
             long now = System.currentTimeMillis();
             int packetDelay = (int)(now - lastServerPacketTime);
@@ -91,11 +88,7 @@ public class TickSyncMain implements ModInitializer {
                 packetDelayHistogram[packetDelay]++;
             }
             avgPacketDelay = getAvgPacketDelay();
-            packetDeviation = getPacketDeviation();
-            if (packetDeviation > 16) {
-                packetDeviationBuffer.clear();
-                addToPacketDeviationBuffer(0);
-            }
+            packetRange = getPacketRange();
         }
         isPacketReceivedThisTick = false;
 
@@ -109,19 +102,25 @@ public class TickSyncMain implements ModInitializer {
         return client.world != null && client.player != null && !client.isPaused() && client.getCurrentFps() >= 40;
     }
     void addToTickDeltaBuffer(int newDelta) {
+        int tickBufferSize = 10;
         packetDelayBuffer.add(newDelta);
 
-        int tickBufferSize = cfg.tickSyncMargin;
         while (packetDelayBuffer.size() > tickBufferSize) {
             packetDelayBuffer.removeFirst();
         }
     }
     void addToPacketDeviationBuffer(int newDelta) {
         int tickBufferSize = 100;
-        packetDeviationBuffer.add(newDelta);
+        packetRangeBuffer.add(newDelta);
 
-        while (packetDeviationBuffer.size() > tickBufferSize) {
-            packetDeviationBuffer.removeFirst();
+        while (packetRangeBuffer.size() > tickBufferSize) {
+            var threshold = 8;
+            if (Math.abs(newDelta) > threshold) {
+                packetRangeBuffer.removeLast();
+            }
+            else {
+                packetRangeBuffer.removeFirst();
+            }
         }
     }
     int getAvgPacketDelay() {
@@ -137,38 +136,25 @@ public class TickSyncMain implements ModInitializer {
         }
         return avgPacketDelay;
     }
-    int getPacketDeviation() {
-        if (packetDeviationBuffer.isEmpty()) return 10;
-        System.out.println(packetDeviationBuffer);
-        int med = (int)simpleMedian(packetDeviationBuffer);
+    int getPacketRange() {
+        int size = packetRangeBuffer.size();
+        if (size == 0) return 12;
 
-        List<Integer> deviations = packetDeviationBuffer.stream()
-                .map(v -> Math.abs(v - med))
-                .collect(Collectors.toList());
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
 
-        return (int)simpleMedian(deviations) * 4;
-    }
-    float simpleMedian(List<Integer> values) {
-        // 원본을 건드리지 않고 복사본 생성
-        List<Integer> sorted = new ArrayList<>(values);
-        Collections.sort(sorted);
-
-        int n = sorted.size();
-        if (n % 2 == 1) {
-            // 홀수 개일 때 중앙값
-            return sorted.get(n / 2);
-        } else {
-            // 짝수 개일 때 중앙 두 값의 평균
-            return (float)(sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2;
+        for (Integer v : packetRangeBuffer) {
+            if (v < min) min = v;
+            if (v > max) max = v;
         }
+        //return Math.max(8, max - min);
+        return Math.clamp(max - min, 6, 20);
     }
-
     void onClientTickEnd() {
         if (isTickRateChangedLastTick) {
             isTickRateChangedLastTick = false;
-            setTickRate(Math.min(serverTPS, 20));
+            setTickRate(Math.min(20, serverTPS));
         }
-
         long now = System.currentTimeMillis();
         if (cfg.isTickSyncOn && isPlayingInGame() && (now - lastSyncTime) > 1000) {
             if (isWeirdSyncOccurred()) {

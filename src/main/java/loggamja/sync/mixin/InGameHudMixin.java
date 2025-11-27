@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.minecraft.text.Text;
 
 @Mixin(InGameHud.class)
 public abstract class InGameHudMixin {
@@ -67,7 +66,7 @@ public abstract class InGameHudMixin {
             context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3fr<<16|c3fg<<8|c3fb);
         }
 
-        String text4 = "Packet Deviation: " + TickSyncMain.INSTANCE.packetDeviation + "ms";
+        String text4 = "Packet Deviation: " + TickSyncMain.INSTANCE.packetRange + "ms";
 
         int x4 = client.getWindow().getScaledWidth() - 40;
         int y4 = 30;
