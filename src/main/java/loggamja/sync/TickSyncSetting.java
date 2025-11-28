@@ -15,7 +15,7 @@ public class TickSyncSetting extends Screen {
 
     static String[][] TOGGLE_OPTIONS = {
             { "TickSync: OFF", "TickSync: ON" },
-            { "Margin: Fixed(12ms)", "Margin: Auto(default)" },
+            { "Margin: Fixed(10ms)", "Margin: Auto(default)" },
             { "Debug: OFF", "Debug: ON" }
     };
     static String[] tooltips = {
@@ -36,7 +36,7 @@ public class TickSyncSetting extends Screen {
         if (Objects.equals(lm.getLanguage(), "ko_kr")) {
             TOGGLE_OPTIONS = new String[][] {
                     { "틱 동기화: 꺼짐", "틱 동기화: 켜짐" },
-                    { "정확도: 고정(12ms)", "정확도: 자동(기본)" },
+                    { "정확도: 고정(10ms)", "정확도: 자동(기본)" },
                     { "디버그: 꺼짐", "디버그: 켜짐" }
             };
             tooltips = new String[] {

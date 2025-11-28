@@ -43,7 +43,7 @@ public abstract class InGameHudMixin {
         // 안정성
         String text4 = "Stability: " + TickSyncHUDManager.INSTANCE.packetRange + "ms";
         int x4 = client.getWindow().getScaledWidth() - space;
-        int y4 = space ;
+        int y4 = space;
         x4 -= client.textRenderer.getWidth(text4);
         context.drawTextWithShadow(client.textRenderer, text4, x4, y4, 0xFFFF00);
 
