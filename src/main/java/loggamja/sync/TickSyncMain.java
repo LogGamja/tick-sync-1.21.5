@@ -41,7 +41,7 @@ public class TickSyncMain implements ModInitializer {
     final int instantRangeBufferSize = 10;
     final int rangeBufferSize = 40;
 
-    final int outlierLimit = 7;
+    final int outlierLimit = 8;
     final int thresholdOffset = 4;
 
     public final int samplingRange = 55;
@@ -91,7 +91,9 @@ public class TickSyncMain implements ModInitializer {
     }
     public boolean canSync() {
         MinecraftClient client = MinecraftClient.getInstance();
-            return serverTPS <= 20 && client.getCurrentFps() > 40 && instantPacketRange < applyRatio(25);
+
+        if (cfg.useAutoMargin) return serverTPS <= 20 && client.getCurrentFps() > 40 && instantPacketRange < applyRatio(25);
+        else                   return serverTPS <= 20 && client.getCurrentFps() > 40;
     }
     public void onClientTickStart() {
         if (isPlayingInGame()) {
@@ -104,6 +106,7 @@ public class TickSyncMain implements ModInitializer {
             else {
                 addToTickDeltaBuffer(avgPacketDelay);
             }
+
             if (afterLazyPacketCooldown > 0) afterLazyPacketCooldown--;
             TickSyncHUDManager.INSTANCE.addToDebugHistogram(packetDelay);
             TickSyncHUDManager.INSTANCE.updateHUD();
@@ -191,7 +194,7 @@ public class TickSyncMain implements ModInitializer {
         TickSyncHUDManager.INSTANCE.syncTextAlpha = 10;
     }
     int getPacketMargin() {
-        final int max = 20;
+        final int max = outlierLimit * 2;
         final int min = afterLazyPacketCooldown > 0 ? 8 : 6;
         return cfg.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
     }
@@ -221,17 +224,15 @@ public class TickSyncMain implements ModInitializer {
     }
     int quantizeToFrame(float margin) {
         if (margin < getFrameDuration()) return (int)getFrameDuration();
-        return (int)(Math.floor(margin / getFrameDuration()) * getFrameDuration());
+        if (cfg.useAutoMargin) return (int)(Math.floor(margin / getFrameDuration()) * getFrameDuration());
+        else                   return (int)(Math.round(margin / getFrameDuration()) * getFrameDuration());
     }
     int getMatchSyncOffset() {
-        if (!cfg.useAutoMargin) return 4;
+        if (!cfg.useAutoMargin) return 0;
 
         final int x = MinecraftClient.getInstance().getCurrentFps();
-        if (x < 60) return 5;
-        if (x < 90) return 4;
-        if (x < 120) return 3;
-        if (x < 180) return 2;
-        if (x < 240) return 1;
+        if (x <= 120) return 2;
+        if (x <= 240) return 1;
         return 0;
     }
     void shiftNextTickDuration(int term) {
