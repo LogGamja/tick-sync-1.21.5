@@ -39,11 +39,11 @@ public class TickSyncMain implements ModInitializer {
     // 상수 정의
     final int tickBufferSize = 10;
     final int instantRangeBufferSize = 10;
-    final int rangeBufferSize = 80;
+    final int rangeBufferSize = 40;
 
-    final int outlierLimit = 8;
+    final int outlierLimit = 7;
     final int thresholdOffset = 4;
-    final int matchSyncOffset = 0;
+
     public final int samplingRange = 55;
 
     List<Integer> packetDelayBuffer = new ArrayList<>();
@@ -191,7 +191,7 @@ public class TickSyncMain implements ModInitializer {
         TickSyncHUDManager.INSTANCE.syncTextAlpha = 10;
     }
     int getPacketMargin() {
-        final int max = outlierLimit * 2;
+        final int max = 20;
         final int min = afterLazyPacketCooldown > 0 ? 8 : 6;
         return cfg.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
     }
@@ -211,7 +211,7 @@ public class TickSyncMain implements ModInitializer {
     float getFrameDuration() { return 1000f / MinecraftClient.getInstance().getCurrentFps(); }
     void matchTickSync() {
         lastSyncTime = System.currentTimeMillis();
-        int tickToPush = (getTickDuration() - avgPacketDelay) + quantizeToFrame(applyRatio(getPacketMargin() + matchSyncOffset));
+        int tickToPush = (getTickDuration() - avgPacketDelay) + quantizeToFrame(applyRatio(getPacketMargin() + getMatchSyncOffset()));
 
         if (tickToPush > getTickDuration() / 2)
             tickToPush -= getTickDuration(); // pull tick
@@ -222,6 +222,17 @@ public class TickSyncMain implements ModInitializer {
     int quantizeToFrame(float margin) {
         if (margin < getFrameDuration()) return (int)getFrameDuration();
         return (int)(Math.floor(margin / getFrameDuration()) * getFrameDuration());
+    }
+    int getMatchSyncOffset() {
+        if (!cfg.useAutoMargin) return 4;
+
+        final int x = MinecraftClient.getInstance().getCurrentFps();
+        if (x < 60) return 5;
+        if (x < 90) return 4;
+        if (x < 120) return 3;
+        if (x < 180) return 2;
+        if (x < 240) return 1;
+        return 0;
     }
     void shiftNextTickDuration(int term) {
         final float tickRate = 1000f / (term + getTickDuration());
