@@ -1,5 +1,6 @@
 package loggamja.sync.mixin;
 
+import loggamja.sync.TickSyncHUDManager;
 import loggamja.sync.TickSyncMain;
 import loggamja.sync.TickSyncConfig;
 //import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
@@ -10,6 +11,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.render.RenderTickCounter;
 
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +19,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.awt.*;
 
 @Mixin(InGameHud.class)
 public abstract class InGameHudMixin {
@@ -37,18 +41,36 @@ public abstract class InGameHudMixin {
         final int term = 10;
 
         // 안정성
-        String text4 = "Stability: " + TickSyncMain.INSTANCE.packetRange + "ms";
+        String text4 = "Stability: " + TickSyncHUDManager.INSTANCE.packetRange + "ms";
         int x4 = client.getWindow().getScaledWidth() - space;
         int y4 = space ;
         x4 -= client.textRenderer.getWidth(text4);
         context.drawTextWithShadow(client.textRenderer, text4, x4, y4, 0xFFFF00);
 
         // 딜레이
-        String text = "Tick Delay: " + TickSyncMain.INSTANCE.avgPacketDelay + "ms";
+        String text = "Tick Delay: " + TickSyncHUDManager.INSTANCE.avgPacketDelay + "ms";
         int x = client.getWindow().getScaledWidth() - space;
         int y = space + term;
         x -= client.textRenderer.getWidth(text);
         context.drawTextWithShadow(client.textRenderer, text, x, y, 0x00FFFF);
+
+        // 싱크가 불가능하다고 알리는 텍스트
+        if (!TickSyncHUDManager.INSTANCE.canSync) {
+            String text3 = "\uD83D\uDEC7";
+            int x3 = client.getWindow().getScaledWidth() - 90;
+            int y3 = space + term;
+            x3 -= client.textRenderer.getWidth(text3);
+            context.drawTextWithShadow(client.textRenderer, text3, x3, y3, 0xFF0000);
+        }
+
+        // 싱크 중임을 알리는 텍스트
+        if (TickSyncHUDManager.INSTANCE.syncTextAlpha > 0 && TickSyncHUDManager.INSTANCE.canSync) {
+            String text3 = "\uD83D\uDD04";
+            int x3 = client.getWindow().getScaledWidth() - 90;
+            int y3 = space + term;
+            x3 -= client.textRenderer.getWidth(text3);
+            context.drawTextWithShadow(client.textRenderer, text3, x3, y3, 0x00FFFF);
+        }
 
         // histogram by towercrain
         var histogramHeight = space + term * 2;
@@ -57,7 +79,7 @@ public abstract class InGameHudMixin {
         x2 -= histogramSize;
 
         for (int i = 0; i < histogramSize; i++) {
-            float c3Intensity = TickSyncMain.INSTANCE.packetDelayHistogram[i];
+            float c3Intensity = TickSyncHUDManager.INSTANCE.packetDelayHistogram[i];
             float c3r = c3Intensity;
             float c3g = c3Intensity;
             float c3b = c3Intensity;
@@ -70,7 +92,7 @@ public abstract class InGameHudMixin {
             context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3fr<<16|c3fg<<8|c3fb);
         }
 
-        final Identifier K_HUD_ID =Identifier.of("khudexample", "k_hud");
+        //final Identifier K_HUD_ID =Identifier.of("khudexample", "k_hud");
 
         //HudElementRegistry.attachElementBefore(
         //
