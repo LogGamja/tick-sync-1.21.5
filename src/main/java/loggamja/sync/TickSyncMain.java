@@ -206,7 +206,7 @@ public class TickSyncMain implements ModInitializer {
     }
     int getPacketMargin() {
         final int max = outlierLimit * 2;
-        final int min = afterLazyPacketCooldown > 0 ? 8 : 6;
+        final int min = afterLazyPacketCooldown > 0 ? 8 : (cfg.useExtremeMargin ? 4 : 6);
         return cfg.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
     }
     boolean isTickSyncRequired() {
@@ -216,7 +216,7 @@ public class TickSyncMain implements ModInitializer {
         final int threshold = (int)applyRatio(getPacketMargin()) + syncThresholdOffset;
 
         if (threshold <= getFrameDuration()) {
-            return (int)(getFrameDuration() * 1.4f);
+            return (int)(getFrameDuration() * 1.5f);
         }
         else {
             return threshold;
@@ -238,8 +238,8 @@ public class TickSyncMain implements ModInitializer {
     int quantizeToFrame(float margin) {
         if (margin < getFrameDuration()) return (int)getFrameDuration();
 
-        final double quantizedFrame = isFrameRateAbove(120) ? Math.round(margin / getFrameDuration()) : Math.floor(margin / getFrameDuration());
-        return (int)(quantizedFrame * getFrameDuration());
+        if (cfg.useAutoMargin) return (int)(Math.floor(margin / getFrameDuration()) * getFrameDuration());
+        else                   return (int)(Math.round(margin / getFrameDuration()) * getFrameDuration());
     }
     int getMatchSyncOffset() {
         if (!cfg.useAutoMargin) return 0;
