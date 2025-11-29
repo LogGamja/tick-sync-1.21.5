@@ -16,13 +16,11 @@ public class TickSyncSetting extends Screen {
     static String[][] TOGGLE_OPTIONS = {
             { "TickSync: OFF", "TickSync: ON" },
             { "Margin: Fixed(10ms)", "Margin: Auto(default)" },
-            { "Extreme: OFF(default)", "Extreme: ON" },
             { "Debug: OFF", "Debug: ON" }
     };
     static String[] tooltips = {
             "Toggles all functions of TickSync.",
             "Select control method related with internet quality.",
-            "Try more sync when Auto Margin lower than 6ms.",
             "Toggles debug screen at the corner."
     };
 
@@ -39,13 +37,11 @@ public class TickSyncSetting extends Screen {
             TOGGLE_OPTIONS = new String[][] {
                     { "틱 동기화: 꺼짐", "틱 동기화: 켜짐" },
                     { "정확도: 고정(10ms)", "정확도: 자동(기본)" },
-                    { "익스트림: 꺼짐(기본)", "익스트림: 켜짐" },
                     { "디버그: 꺼짐", "디버그: 켜짐" }
             };
             tooltips = new String[] {
                     "모든 틱 동기화 기능을 켜거나 끕니다.",
                     "인터넷 품질과 관련된 제어 방법을 결정합니다.",
-                    "자동 정확도가 6ms 미만일 때 추가 동기화를 진행합니다.",
                     "우상단 디버그 화면을 켜거나 끕니다."
             };
         }
@@ -66,8 +62,7 @@ public class TickSyncSetting extends Screen {
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;
         toggleIndices[0] = cfg.isTickSyncOn ? 1 : 0;
         toggleIndices[1] = cfg.useAutoMargin ? 1 : 0;
-        toggleIndices[2] = cfg.useExtremeMargin ? 1 : 0;
-        toggleIndices[3] = cfg.useDebugScreen ? 1 : 0;
+        toggleIndices[2] = cfg.useDebugScreen ? 1 : 0;
 
         // Buttons
         for (int i = 0; i < TOGGLE_OPTIONS.length; i++) {
@@ -112,9 +107,6 @@ public class TickSyncSetting extends Screen {
             cfg.useAutoMargin = (index != 0);
         }
         else if (button == 2) {
-            cfg.useExtremeMargin = (index != 0);
-        }
-        else if (button == 3) {
             cfg.useDebugScreen = (index != 0);
         }
     }

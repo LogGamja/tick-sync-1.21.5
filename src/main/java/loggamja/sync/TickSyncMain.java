@@ -161,13 +161,9 @@ public class TickSyncMain implements ModInitializer {
         final int size = list.size();
         if (size < requireBufferSize) return 12;
 
-        int min = Integer.MAX_VALUE;
-        int max = Integer.MIN_VALUE;
+        int min = Collections.min(packetDelayBuffer);
+        int max = Collections.max(packetDelayBuffer);
 
-        for (int value : list) {
-            if (value < min) min = value;
-            if (value > max) max = value;
-        }
         return max - min;
     }
     void onClientTickEnd() {
@@ -206,7 +202,7 @@ public class TickSyncMain implements ModInitializer {
     }
     int getPacketMargin() {
         final int max = outlierLimit * 2;
-        final int min = afterLazyPacketCooldown > 0 ? 8 : (cfg.useExtremeMargin ? 4 : 6);
+        final int min = afterLazyPacketCooldown > 0 ? 8 : 6;
         return cfg.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
     }
     boolean isTickSyncRequired() {

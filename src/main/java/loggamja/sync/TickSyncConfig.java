@@ -15,7 +15,6 @@ public class TickSyncConfig {
 
     public boolean isTickSyncOn = true;
     public boolean useAutoMargin = true;
-    public boolean useExtremeMargin = false;
     public boolean useDebugScreen = false;
 
     // 싱글톤
@@ -29,7 +28,6 @@ public class TickSyncConfig {
             if (loaded != null) {
                 this.isTickSyncOn = loaded.isTickSyncOn;
                 this.useAutoMargin = loaded.useAutoMargin;
-                this.useExtremeMargin = loaded.useExtremeMargin;
                 this.useDebugScreen = loaded.useDebugScreen;
             }
         } catch (IOException e) {
