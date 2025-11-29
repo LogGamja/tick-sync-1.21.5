@@ -3,6 +3,7 @@ package loggamja.sync;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
 import net.fabricmc.loader.api.metadata.ModMetadata;
@@ -38,17 +39,17 @@ public class TickSyncMain implements ModInitializer {
 
     // 상수 정의
     final int tickBufferSize = 10;
-    final int instantRangeBufferSize = 10;
+    final int fastRangeBufferSize = 10;
     final int rangeBufferSize = 40;
 
     final int outlierLimit = 8;
-    final int thresholdOffset = 4;
+    final int syncThresholdOffset = 4;
 
     public final int samplingRange = 55;
 
     List<Integer> packetDelayBuffer = new ArrayList<>();
     List<Integer> packetRangeBuffer = new ArrayList<>();
-    List<Integer> instantPacketRangeBuffer = new ArrayList<>();
+    List<Integer> fastPacketRangeBuffer = new ArrayList<>();
 
     static TickSyncConfig cfg;
     public static final TickSyncMain INSTANCE = new TickSyncMain();
@@ -113,7 +114,7 @@ public class TickSyncMain implements ModInitializer {
 
             avgPacketDelay = calculateMean(packetDelayBuffer);
             packetRange = calculateRange(packetRangeBuffer, rangeBufferSize);
-            instantPacketRange = calculateRange(instantPacketRangeBuffer, instantRangeBufferSize);
+            instantPacketRange = calculateRange(fastPacketRangeBuffer, fastRangeBufferSize);
         }
         isPacketRangeUpdatedThisTick = false;
     }
@@ -135,10 +136,10 @@ public class TickSyncMain implements ModInitializer {
                 packetRangeBuffer.removeFirst();
             }
         }
-        instantPacketRangeBuffer.add(newDelta);
+        fastPacketRangeBuffer.add(newDelta);
 
-        if (instantPacketRangeBuffer.size() > instantRangeBufferSize) {
-            instantPacketRangeBuffer.removeFirst();
+        if (fastPacketRangeBuffer.size() > fastRangeBufferSize) {
+            fastPacketRangeBuffer.removeFirst();
         }
     }
     int calculateMean(List<Integer> list) {
@@ -155,8 +156,13 @@ public class TickSyncMain implements ModInitializer {
         final int size = list.size();
         if (size < requireBufferSize) return 12;
 
-        int min = Collections.min(list);
-        int max = Collections.max(list);
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+
+        for (int i : list) {
+            if (i < min) min = i;
+            if (i > max) max = i;
+        }
 
         return max - min;
     }
@@ -202,7 +208,7 @@ public class TickSyncMain implements ModInitializer {
         return getThreshold() < avgPacketDelay;
     }
     int getThreshold() {
-        final int threshold = (int)applyRatio(getPacketMargin()) + thresholdOffset;
+        final int threshold = (int)applyRatio(getPacketMargin()) + syncThresholdOffset;
 
         if (threshold < getFrameDuration()) {
             return (int)(getFrameDuration() * 1.5f);
@@ -231,9 +237,9 @@ public class TickSyncMain implements ModInitializer {
         if (!cfg.useAutoMargin) return 0;
 
         final int x = MinecraftClient.getInstance().getCurrentFps();
-        if (x <= 120) return 2;
-        if (x <= 240) return 1;
-        return 0;
+        if (x > 240) return 0;
+        if (x > 120) return 1;
+        return 2;
     }
     void shiftNextTickDuration(int term) {
         final float tickRate = 1000f / (term + getTickDuration());
@@ -260,7 +266,7 @@ public class TickSyncMain implements ModInitializer {
     public boolean isMinecraftAtLeast(String versionString) {
         Optional<ModMetadata> mcMeta = FabricLoader.getInstance()
                 .getModContainer("minecraft")
-                .map(container -> container.getMetadata());
+                .map(ModContainer::getMetadata);
 
         if (mcMeta.isEmpty()) return false;
 
