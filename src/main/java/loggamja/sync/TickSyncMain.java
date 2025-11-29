@@ -91,10 +91,11 @@ public class TickSyncMain implements ModInitializer {
         return client.world != null && client.player != null && !client.isPaused();
     }
     public boolean canSync() {
-        MinecraftClient client = MinecraftClient.getInstance();
-
-        if (cfg.useAutoMargin) return serverTPS <= 20 && client.getCurrentFps() > 40 && instantPacketRange < applyRatio(25);
-        else                   return serverTPS <= 20 && client.getCurrentFps() > 40;
+        if (cfg.useAutoMargin) return serverTPS <= 20 && getCurrentFPS() > 40 && instantPacketRange < applyRatio(25);
+        else                   return serverTPS <= 20 && getCurrentFPS() > 40;
+    }
+    int getCurrentFPS() {
+        return MinecraftClient.getInstance().getCurrentFps();
     }
     public void onClientTickStart() {
         if (isPlayingInGame()) {
@@ -217,7 +218,7 @@ public class TickSyncMain implements ModInitializer {
             return threshold;
         }
     }
-    float getFrameDuration() { return 1000f / MinecraftClient.getInstance().getCurrentFps(); }
+    float getFrameDuration() { return 1000f / getCurrentFPS(); }
     void matchTickSync() {
         lastSyncTime = System.currentTimeMillis();
         int tickToPush = (getTickDuration() - avgPacketDelay) + quantizeToFrame(applyRatio(getPacketMargin() + getMatchSyncOffset()));
@@ -236,9 +237,8 @@ public class TickSyncMain implements ModInitializer {
     int getMatchSyncOffset() {
         if (!cfg.useAutoMargin) return 0;
 
-        final int x = MinecraftClient.getInstance().getCurrentFps();
-        if (x > 240) return 0;
-        if (x > 120) return 1;
+        if (getCurrentFPS() > 240) return 0;
+        if (getCurrentFPS() > 120) return 1;
         return 2;
     }
     void shiftNextTickDuration(int term) {
