@@ -23,6 +23,7 @@ public class TickSyncMain implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     boolean isTickRateChangedLastTick;
+    boolean isPacketReceivedThisTick;
     boolean isPacketRangeUpdatedThisTick;
 
     int afterLazyPacketCooldown;
@@ -39,17 +40,17 @@ public class TickSyncMain implements ModInitializer {
 
     // 상수 정의
     final int tickBufferSize = 10;
-    final int fastRangeBufferSize = 10;
     final int rangeBufferSize = 40;
+    final int fastRangeBufferSize = 10;
 
     final int outlierLimit = 8;
     final int syncThresholdOffset = 4;
 
     public final int samplingRange = 55;
 
-    List<Integer> packetDelayBuffer = new ArrayList<>();
-    List<Integer> packetRangeBuffer = new ArrayList<>();
-    List<Integer> fastPacketRangeBuffer = new ArrayList<>();
+    List<Integer> packetDelayBuffer = new ArrayList<>(Collections.nCopies(tickBufferSize, 12));
+    List<Integer> packetRangeBuffer = new ArrayList<>(Collections.nCopies(rangeBufferSize, 0));
+    List<Integer> fastPacketRangeBuffer = new ArrayList<>(Collections.nCopies(fastRangeBufferSize, 0));
 
     static TickSyncConfig cfg;
     public static final TickSyncMain INSTANCE = new TickSyncMain();
@@ -64,7 +65,20 @@ public class TickSyncMain implements ModInitializer {
     }
     public void onEntityPacket() {
         final long now = System.currentTimeMillis();
-        lastServerPacketTime = now;
+
+        // 패킷 수신 시간 업데이트
+        if (cfg.useUnstableEnvOption && getCurrentFPS() < 95) {
+            // 기준: 처음 패킷
+            if (!isPacketReceivedThisTick) {
+                lastServerPacketTime = now;
+                isPacketReceivedThisTick = true;
+            }
+        }
+        else {
+            // 기준: 마지막 패킷
+            lastServerPacketTime = now;
+            isPacketReceivedThisTick = true;
+        }
 
         // Range 버퍼 업데이트
         if (!isPacketRangeUpdatedThisTick) {
@@ -118,6 +132,7 @@ public class TickSyncMain implements ModInitializer {
             instantPacketRange = calculateRange(fastPacketRangeBuffer, fastRangeBufferSize);
         }
         isPacketRangeUpdatedThisTick = false;
+        isPacketReceivedThisTick = false;
     }
     void addToTickDeltaBuffer(int newDelta) {
         packetDelayBuffer.add(newDelta);
@@ -127,18 +142,12 @@ public class TickSyncMain implements ModInitializer {
         }
     }
     void addToPacketRangeBuffer(int newDelta) {
-        packetRangeBuffer.add(newDelta);
-
+        if (Math.abs(newDelta) <= outlierLimit) packetRangeBuffer.add(newDelta);
         if (packetRangeBuffer.size() > rangeBufferSize) {
-            if (Math.abs(newDelta) > outlierLimit) {
-                packetRangeBuffer.removeLast();
-            }
-            else {
-                packetRangeBuffer.removeFirst();
-            }
+            packetRangeBuffer.removeFirst();
         }
-        fastPacketRangeBuffer.add(newDelta);
 
+        fastPacketRangeBuffer.add(newDelta);
         if (fastPacketRangeBuffer.size() > fastRangeBufferSize) {
             fastPacketRangeBuffer.removeFirst();
         }
