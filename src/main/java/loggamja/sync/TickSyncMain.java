@@ -48,9 +48,9 @@ public class TickSyncMain implements ModInitializer {
 
     public final int samplingRange = 55;
 
-    List<Integer> packetDelayBuffer = new ArrayList<>(Collections.nCopies(tickBufferSize, 12));
-    List<Integer> packetRangeBuffer = new ArrayList<>(Collections.nCopies(rangeBufferSize, 0));
-    List<Integer> fastPacketRangeBuffer = new ArrayList<>(Collections.nCopies(fastRangeBufferSize, 0));
+    List<Integer> packetDelayBuffer = new ArrayList<>(Collections.nCopies(1, 12));
+    List<Integer> packetRangeBuffer = new ArrayList<>(Collections.nCopies(1, 0));
+    List<Integer> fastPacketRangeBuffer = new ArrayList<>(Collections.nCopies(1, 0));
 
     static TickSyncConfig cfg;
     public static final TickSyncMain INSTANCE = new TickSyncMain();
@@ -66,19 +66,8 @@ public class TickSyncMain implements ModInitializer {
     public void onEntityPacket() {
         final long now = System.currentTimeMillis();
 
-        // 패킷 수신 시간 업데이트
-        if (cfg.useUnstableEnvOption && getCurrentFPS() < 95) {
-            // 기준: 처음 패킷
-            if (!isPacketReceivedThisTick) {
-                lastServerPacketTime = now;
-                isPacketReceivedThisTick = true;
-            }
-        }
-        else {
-            // 기준: 마지막 패킷
-            lastServerPacketTime = now;
-            isPacketReceivedThisTick = true;
-        }
+        lastServerPacketTime = now;
+        isPacketReceivedThisTick = true;
 
         // Range 버퍼 업데이트
         if (!isPacketRangeUpdatedThisTick) {
