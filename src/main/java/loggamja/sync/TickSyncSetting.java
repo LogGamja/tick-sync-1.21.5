@@ -50,11 +50,12 @@ public class TickSyncSetting extends Screen {
     protected void init() {
         super.init();
 
-        int startX = this.width / 2 - 75;
-        int startY = this.height / 5;
         int buttonWidth = 169;
         int buttonHeight = 20;
         int spacing = 25;
+
+        int startX = this.width / 2 - buttonWidth / 2;
+        int startY = this.height / 5;
 
         setTextLang();
 
