@@ -158,7 +158,8 @@ public class TickSyncMain implements ModInitializer {
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
 
-        for (int i : list) {
+        for (Integer i : list) {
+            if (i == null) continue;
             if (i < min) min = i;
             if (i > max) max = i;
         }
