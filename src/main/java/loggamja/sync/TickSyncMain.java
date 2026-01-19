@@ -152,13 +152,15 @@ public class TickSyncMain implements ModInitializer {
         return sum / size;
     }
     int calculateRange(List<Integer> list, int requireBufferSize) {
-        final int size = list.size();
-        if (size < requireBufferSize) return 12;
+        if (list == null || list.isEmpty()) return 12;
+        if (list.size() < requireBufferSize) return 12;
 
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
 
-        for (Integer i : list) {
+        List<Integer> snapshot = new ArrayList<>(list);
+
+        for (Integer i : snapshot) {
             if (i == null) continue;
             if (i < min) min = i;
             if (i > max) max = i;
