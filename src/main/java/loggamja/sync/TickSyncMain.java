@@ -2,6 +2,7 @@ package loggamja.sync;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.Version;
@@ -59,6 +60,14 @@ public class TickSyncMain implements ModInitializer {
     public void onInitialize() {
         ClientTickEvents.START_CLIENT_TICK.register(client -> INSTANCE.onClientTickStart());
         ClientTickEvents.END_CLIENT_TICK.register(client -> INSTANCE.onClientTickEnd());
+
+        // 접속 / 퇴장 시 틱 레이트 초기화
+        ClientPlayConnectionEvents.DISCONNECT.register((client, handler) -> {
+            setTickRate(20);
+        });
+        ClientPlayConnectionEvents.INIT.register((client, handler) -> {
+            setTickRate(20);
+        });
 
         TickSyncConfig.INSTANCE.load();
         cfg = TickSyncConfig.INSTANCE;
