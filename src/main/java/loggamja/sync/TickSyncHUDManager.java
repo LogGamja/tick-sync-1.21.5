@@ -1,4 +1,13 @@
-package loggamja.ticksync;
+package loggamja.sync;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import net.fabricmc.loader.api.FabricLoader;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class TickSyncHUDManager {
     public boolean canSync = true;
@@ -18,20 +27,17 @@ public class TickSyncHUDManager {
         avgPacketDelay = TickSyncMain.INSTANCE.avgPacketDelay;
 
         canSync = TickSyncMain.INSTANCE.canSync();
-        fadeSyncText();
         fadeDebugHistogram();
+        fadeSyncText();
     }
-
-    void fadeSyncText() {
+    void fadeDebugHistogram() {
         if (syncTextAlpha > 0) syncTextAlpha--;
     }
-
-    void fadeDebugHistogram() {
+    void fadeSyncText() {
         for (int i = 0; i < samplingRange; i++) {
             packetDelayHistogram[i] *= 0.95f;
         }
     }
-
     public void addToDebugHistogram(int packetDelay) {
         if (0 < packetDelay && packetDelay < samplingRange) {
             packetDelayHistogram[packetDelay]++;

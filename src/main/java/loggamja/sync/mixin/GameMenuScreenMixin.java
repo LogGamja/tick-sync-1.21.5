@@ -1,8 +1,7 @@
-package loggamja.ticksync.mixin;
+package loggamja.sync.mixin;
 
-import loggamja.ticksync.TickSyncSetting;
+import loggamja.sync.TickSyncSetting;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.GameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.resource.language.LanguageManager;
@@ -11,6 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.minecraft.client.gui.screen.GameMenuScreen;
 
 import java.util.Objects;
 
@@ -21,7 +21,7 @@ public abstract class GameMenuScreenMixin extends Screen {
     }
 
     @Inject(method = "init", at = @At("RETURN"))
-    private void ticksync$addCustomButton(CallbackInfo ci) {
+    private void addCustomButton(CallbackInfo ci) {
         MinecraftClient client = MinecraftClient.getInstance();
         LanguageManager lm = client.getLanguageManager();
 
@@ -40,3 +40,4 @@ public abstract class GameMenuScreenMixin extends Screen {
         );
     }
 }
+
