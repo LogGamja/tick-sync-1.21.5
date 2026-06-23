@@ -24,5 +24,6 @@ public class ClientPlayNetworkHandlerMixin {
     @Inject(method = "onUpdateTickRate", at = @At("HEAD"))
     private void onUpdateTickRate(UpdateTickRateS2CPacket packet, CallbackInfo ci) {
         TickSyncMain.INSTANCE.serverTPS = packet.tickRate();
+        TickSyncMain.INSTANCE.clientTPS = Math.min(20, packet.tickRate());
     }
 }

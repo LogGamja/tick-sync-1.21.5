@@ -64,9 +64,13 @@ public class TickSyncMain implements ModInitializer {
         // 접속 / 퇴장 시 틱 레이트 초기화
         ClientPlayConnectionEvents.DISCONNECT.register((client, handler) -> {
             setTickRate(20);
+            serverTPS = 20;
+            clientTPS = 20;
         });
         ClientPlayConnectionEvents.INIT.register((client, handler) -> {
             setTickRate(20);
+            serverTPS = 20;
+            clientTPS = 20;
         });
 
         TickSyncConfig.INSTANCE.load();
@@ -111,6 +115,13 @@ public class TickSyncMain implements ModInitializer {
     }
     public void onClientTickStart() {
         if (isPlayingInGame()) {
+
+            System.out.println("server TPS:" + serverTPS);
+            System.out.println("client TPS:" + clientTPS);
+
+
+
+
             final long now = System.currentTimeMillis();
             final int packetDelay = (int)(now - lastServerPacketTime);
 
