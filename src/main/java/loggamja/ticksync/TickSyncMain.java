@@ -1,6 +1,6 @@
-package loggamja.sync;
+package loggamja.ticksync;
 
-import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-public class TickSyncMain implements ModInitializer {
+public class TickSyncMain implements ClientModInitializer {
     public static final String MOD_ID = "tick-sync";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -57,7 +57,7 @@ public class TickSyncMain implements ModInitializer {
     public static final TickSyncMain INSTANCE = new TickSyncMain();
 
     @Override
-    public void onInitialize() {
+    public void onInitializeClient() {
         ClientTickEvents.START_CLIENT_TICK.register(client -> INSTANCE.onClientTickStart());
         ClientTickEvents.END_CLIENT_TICK.register(client -> INSTANCE.onClientTickEnd());
 
@@ -76,6 +76,7 @@ public class TickSyncMain implements ModInitializer {
         TickSyncConfig.INSTANCE.load();
         cfg = TickSyncConfig.INSTANCE;
     }
+
     public void onEntityPacket() {
         final long now = System.currentTimeMillis();
 
@@ -99,6 +100,7 @@ public class TickSyncMain implements ModInitializer {
             isPacketRangeUpdatedThisTick = true;
         }
     }
+
     int getTickDuration() { return (int)(1000 / serverTPS); }
     float applyRatio(float x) { return x * (20 / serverTPS); }
 
@@ -106,22 +108,18 @@ public class TickSyncMain implements ModInitializer {
         MinecraftClient client = MinecraftClient.getInstance();
         return client.world != null && client.player != null && !client.isPaused();
     }
+
     public boolean canSync() {
         if (cfg.useAutoMargin) return serverTPS <= 20 && getCurrentFPS() > 40 && instantPacketRange < applyRatio(25);
         else                   return serverTPS <= 20 && getCurrentFPS() > 40;
     }
+
     int getCurrentFPS() {
         return MinecraftClient.getInstance().getCurrentFps();
     }
+
     public void onClientTickStart() {
         if (isPlayingInGame()) {
-
-            System.out.println("server TPS:" + serverTPS);
-            System.out.println("client TPS:" + clientTPS);
-
-
-
-
             final long now = System.currentTimeMillis();
             final int packetDelay = (int)(now - lastServerPacketTime);
 
@@ -143,6 +141,7 @@ public class TickSyncMain implements ModInitializer {
         isPacketRangeUpdatedThisTick = false;
         isPacketReceivedThisTick = false;
     }
+
     void addToTickDeltaBuffer(int newDelta) {
         packetDelayBuffer.add(newDelta);
 
@@ -150,6 +149,7 @@ public class TickSyncMain implements ModInitializer {
             packetDelayBuffer.removeFirst();
         }
     }
+
     void addToPacketRangeBuffer(int newDelta) {
         if (Math.abs(newDelta) <= outlierLimit) packetRangeBuffer.add(newDelta);
         if (packetRangeBuffer.size() > rangeBufferSize) {
@@ -161,6 +161,7 @@ public class TickSyncMain implements ModInitializer {
             fastPacketRangeBuffer.removeFirst();
         }
     }
+
     int calculateMean(List<Integer> list) {
         final int size = list.size();
         if (size == 0) return 10;
@@ -171,6 +172,7 @@ public class TickSyncMain implements ModInitializer {
         }
         return sum / size;
     }
+
     int calculateRange(List<Integer> list, int requireBufferSize) {
         if (list == null || list.isEmpty()) return 12;
         if (list.size() < requireBufferSize) return 12;
@@ -188,6 +190,7 @@ public class TickSyncMain implements ModInitializer {
 
         return max - min;
     }
+
     void onClientTickEnd() {
         if (isTickRateChangedLastTick) {
             isTickRateChangedLastTick = false;
@@ -204,12 +207,14 @@ public class TickSyncMain implements ModInitializer {
             }
         }
     }
+
     boolean isWeirdSyncOccurred() {
         if (packetDelayBuffer.isEmpty()) return false;
 
         final int range = calculateRange(packetDelayBuffer, tickBufferSize);
         return (packetDelayBuffer.size() >= tickBufferSize) && range > (applyRatio(35));
     }
+
     void fixWeirdSync() {
         if (packetDelayBuffer.isEmpty()) return;
 
@@ -221,14 +226,17 @@ public class TickSyncMain implements ModInitializer {
 
         TickSyncHUDManager.INSTANCE.syncTextAlpha = 10;
     }
+
     int getPacketMargin() {
         final int max = outlierLimit * 2;
         final int min = afterLazyPacketCooldown > 0 ? 8 : 6;
         return cfg.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
     }
+
     boolean isTickSyncRequired() {
         return getThreshold() < avgPacketDelay;
     }
+
     int getThreshold() {
         final int threshold = (int)applyRatio(getPacketMargin()) + syncThresholdOffset;
 
@@ -239,7 +247,9 @@ public class TickSyncMain implements ModInitializer {
             return threshold;
         }
     }
+
     float getFrameDuration() { return 1000f / getCurrentFPS(); }
+
     void matchTickSync() {
         lastSyncTime = System.currentTimeMillis();
         int tickToPush = (getTickDuration() - avgPacketDelay) + quantizeToFrame(applyRatio(getPacketMargin() + getMatchSyncOffset()));
@@ -250,11 +260,13 @@ public class TickSyncMain implements ModInitializer {
         shiftNextTickDuration(tickToPush);
         TickSyncHUDManager.INSTANCE.syncTextAlpha = 20;
     }
+
     int quantizeToFrame(float margin) {
         if (margin < getFrameDuration()) return (int)getFrameDuration();
         if (cfg.useAutoMargin) return (int)(Math.floor(margin / getFrameDuration()) * getFrameDuration());
         else                   return (int)(Math.round(margin / getFrameDuration()) * getFrameDuration());
     }
+
     int getMatchSyncOffset() {
         if (!cfg.useAutoMargin) return 0;
 
@@ -262,6 +274,7 @@ public class TickSyncMain implements ModInitializer {
         if (getCurrentFPS() > 120) return 1;
         return 2;
     }
+
     void shiftNextTickDuration(int term) {
         final float tickRate = 1000f / (term + getTickDuration());
 
@@ -273,6 +286,7 @@ public class TickSyncMain implements ModInitializer {
         avgPacketDelay = getPacketMargin();
         isTickRateChangedLastTick = true;
     }
+
     void setTickRate(float tickRate) {
         clientTPS = tickRate;
 
@@ -283,6 +297,7 @@ public class TickSyncMain implements ModInitializer {
             tickManager.setTickRate(tickRate);
         }
     }
+
     // -------------
     public boolean isMinecraftAtLeast(String versionString) {
         Optional<ModMetadata> mcMeta = FabricLoader.getInstance()
@@ -294,8 +309,6 @@ public class TickSyncMain implements ModInitializer {
         Version current = mcMeta.get().getVersion();
         try {
             Version target = Version.parse(versionString);
-
-            // Fabric API의 Version 클래스는 비교 가능
             return current.compareTo(target) >= 0;
         } catch (VersionParsingException e) {
             return false;

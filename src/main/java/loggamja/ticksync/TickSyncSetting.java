@@ -1,4 +1,4 @@
-package loggamja.sync;
+package loggamja.ticksync;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -29,6 +29,7 @@ public class TickSyncSetting extends Screen {
     public TickSyncSetting() {
         super(Text.literal("Setting"));
     }
+
     void setTextLang() {
         MinecraftClient client = MinecraftClient.getInstance();
         LanguageManager lm = client.getLanguageManager();
@@ -46,6 +47,7 @@ public class TickSyncSetting extends Screen {
             };
         }
     }
+
     @Override
     protected void init() {
         super.init();
@@ -99,6 +101,7 @@ public class TickSyncSetting extends Screen {
                         .build()
         );
     }
+
     void onButtonClick(int button, int index) {
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;
         if (button == 0) {
@@ -111,6 +114,7 @@ public class TickSyncSetting extends Screen {
             cfg.useDebugScreen = (index != 0);
         }
     }
+
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         //this.renderBackground(context, mouseX, mouseY, delta); 2중 블러 배경 렌더링. 21.6+에서 버그 발생

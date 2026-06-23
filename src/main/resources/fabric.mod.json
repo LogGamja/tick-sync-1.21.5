@@ -13,13 +13,10 @@
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/mcrider-sync/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
-		"main": [
-          "loggamja.sync.TickSyncMain"
-		],
-		"fabric-datagen": [
-          "loggamja.sync.TickSyncDataGenerator"
+		"client": [
+          "loggamja.ticksync.TickSyncMain"
 		]
 	},
 	"mixins": [

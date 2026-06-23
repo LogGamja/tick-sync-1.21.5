@@ -1,26 +1,18 @@
-package loggamja.sync.mixin;
+package loggamja.ticksync.mixin;
 
-import loggamja.sync.TickSyncHUDManager;
-import loggamja.sync.TickSyncMain;
-import loggamja.sync.TickSyncConfig;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import loggamja.ticksync.TickSyncConfig;
+import loggamja.ticksync.TickSyncHUDManager;
+import loggamja.ticksync.TickSyncMain;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.render.RenderTickCounter;
-
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.awt.*;
 
 @Mixin(InGameHud.class)
 public abstract class InGameHudMixin {
@@ -29,9 +21,8 @@ public abstract class InGameHudMixin {
     @Shadow
     public abstract void tick(boolean paused);
 
-    // render(MatrixStack, float, CallbackInfo)
     @Inject(method = "render", at = @At("HEAD"))
-    private void onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+    private void ticksync$onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         if (client.player == null) return;
 
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;
@@ -91,26 +82,5 @@ public abstract class InGameHudMixin {
             int c3fb = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3b, 0.0), 1.0/2.2)), 0, 255);
             context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3fr<<16|c3fg<<8|c3fb);
         }
-
-        //final Identifier K_HUD_ID =Identifier.of("khudexample", "k_hud");
-
-        //HudElementRegistry.attachElementBefore(
-        //
-        //        VanillaHudElements.CHAT,
-        //        K_HUD_ID,
-        //        new HudElement() {
-        //            @Override
-        //            public void render(DrawContext context, RenderTickCounter tickCounter) {
-        //                MinecraftClient mc = MinecraftClient.getInstance();
-        //                int x = 10;
-        //                int y = 10;
-        //                int color = 0xFFFFFFFF; // 흰색
-        //                Text t = Text.literal("ㅋ");
-        //                context.drawTextWithShadow(mc.textRenderer, t, x, y, color);
-        //            }
-        //        }
-        //);
-
     }
 }
-
