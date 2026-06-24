@@ -3,16 +3,11 @@ package loggamja.sync.mixin;
 import loggamja.sync.TickSyncHUDManager;
 import loggamja.sync.TickSyncMain;
 import loggamja.sync.TickSyncConfig;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.render.RenderTickCounter;
 
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

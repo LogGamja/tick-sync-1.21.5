@@ -22,7 +22,7 @@ public class TickSyncSetting extends Screen {
     static String[] tooltips = {
             "Toggles all functions of TickSync.",
             "Select control method related with internet quality.",
-            "Select 'Render' if you don't know well about this.",
+            "Select 'Render' unless your frame rate is terribly low.",
             "Toggles debug screen at the corner."
     };
 
@@ -45,7 +45,7 @@ public class TickSyncSetting extends Screen {
             tooltips = new String[] {
                     "모든 틱 동기화 기능을 켜거나 끕니다.",
                     "인터넷 품질과 관련된 제어 방법을 결정합니다.",
-                    "잘 알지 못한다면 무조건 Render를 쓰세요!",
+                    "프레임률이 끔찍하게 낮은 경우가 아니면 Render를 선택하세요.",
                     "우상단 디버그 화면을 켜거나 끕니다."
             };
         }

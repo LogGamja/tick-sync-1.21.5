@@ -139,12 +139,8 @@ public class TickSyncMain implements ClientModInitializer {
     }
     public void onClientTickStart() {
         if (isPlayingInGame()) {
-
-            System.out.println("server TPS:" + serverTPS);
-            System.out.println("client TPS:" + clientTPS);
-
-
-
+            //System.out.println("server TPS:" + serverTPS);
+            //System.out.println("client TPS:" + clientTPS);
 
             final long now = System.currentTimeMillis();
             final int packetDelay = (int)(now - lastServerPacketTime);
