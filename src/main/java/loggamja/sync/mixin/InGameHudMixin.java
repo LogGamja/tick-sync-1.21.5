@@ -74,7 +74,7 @@ public abstract class InGameHudMixin {
 
         // histogram by towercrain
         var histogramHeight = space + term * 2;
-        var histogramSize = TickSyncMain.INSTANCE.samplingRange;
+        var histogramSize = TickSyncMain.samplingRange;
         int x2 = client.getWindow().getScaledWidth() - space;
         x2 -= histogramSize;
 

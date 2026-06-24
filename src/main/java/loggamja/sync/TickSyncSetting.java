@@ -90,7 +90,7 @@ public class TickSyncSetting extends Screen {
         // Exit button
         this.addDrawableChild(
                 ButtonWidget.builder(Text.literal("OK"), button -> {
-                            assert this.client != null;
+                            Objects.requireNonNull(this.client);
                             this.client.setScreen(new GameMenuScreen(true));
                             TickSyncConfig.INSTANCE.save();
                         })

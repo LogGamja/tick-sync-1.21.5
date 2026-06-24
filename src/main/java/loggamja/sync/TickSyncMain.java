@@ -47,19 +47,21 @@ public class TickSyncMain implements ModInitializer {
     final int outlierLimit = 8;
     final int syncThresholdOffset = 4;
 
-    public final int samplingRange = 55;
+    public static final int samplingRange = 55;
 
     List<Integer> packetDelayBuffer = new ArrayList<>(Collections.nCopies(1, 12));
     List<Integer> packetRangeBuffer = new ArrayList<>(Collections.nCopies(1, 0));
     List<Integer> fastPacketRangeBuffer = new ArrayList<>(Collections.nCopies(1, 0));
 
     static TickSyncConfig cfg;
-    public static final TickSyncMain INSTANCE = new TickSyncMain();
+    public static TickSyncMain INSTANCE;
 
     @Override
     public void onInitialize() {
-        ClientTickEvents.START_CLIENT_TICK.register(client -> INSTANCE.onClientTickStart());
-        ClientTickEvents.END_CLIENT_TICK.register(client -> INSTANCE.onClientTickEnd());
+        INSTANCE = this;
+
+        ClientTickEvents.START_CLIENT_TICK.register(client -> this.onClientTickStart());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> this.onClientTickEnd());
 
         // 접속 / 퇴장 시 틱 레이트 초기화
         ClientPlayConnectionEvents.DISCONNECT.register((client, handler) -> {
@@ -263,7 +265,10 @@ public class TickSyncMain implements ModInitializer {
         return 2;
     }
     void shiftNextTickDuration(int term) {
-        final float tickRate = 1000f / (term + getTickDuration());
+        // 0/음수 나눗셈 방지: 다음 틱 길이(ms)에 최소값을 보장 (최대 200TPS)
+        final int minTickDuration = 5;
+        final int nextTickDuration = Math.max(minTickDuration, term + getTickDuration());
+        final float tickRate = 1000f / nextTickDuration;
 
         setTickRate(tickRate);
 

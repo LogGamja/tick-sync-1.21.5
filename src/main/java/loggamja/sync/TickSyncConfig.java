@@ -11,7 +11,7 @@ import java.io.IOException;
 
 public class TickSyncConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "tick-sync-config.json");
+    private static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "ticksync-config.json");
 
     public boolean isTickSyncOn = true;
     public boolean useAutoMargin = true;
