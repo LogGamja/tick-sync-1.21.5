@@ -91,13 +91,21 @@ public class TickSyncMain implements ClientModInitializer {
     public void onEntityPacket() {
         final long now = System.currentTimeMillis();
 
-        // Netty가 아닌 렌더 스레드에서만 업데이트함
         if (MinecraftClient.getInstance().isOnThread()) {
-            lastServerPacketTime = now;
-            isPacketReceivedThisTick = true;
+            // 기본값: Render 스레드의 시간 사용
+            if (!cfg.useNettyCriteria) {
+                lastServerPacketTime = now;
+                isPacketReceivedThisTick = true;
+            }
         }
         else {
-            // Netty 스레드에서만 Range 버퍼 업데이트
+            // 실험적 옵션 활성화: Netty의 시간 사용
+            if (cfg.useNettyCriteria) {
+                lastServerPacketTime = now;
+                isPacketReceivedThisTick = true;
+            }
+
+            // Netty 에서 온 패킷을 기준으로 네트워크 안정성 판단
             if (!isPacketRangeUpdatedThisTick) {
                 final int delta = (int)(now - lastPacketRangeUpdatedTime);
 

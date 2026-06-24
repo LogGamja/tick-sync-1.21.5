@@ -17,6 +17,8 @@ public class TickSyncConfig {
     public boolean useAutoMargin = true;
     public boolean useDebugScreen = false;
 
+    public boolean useNettyCriteria = false;
+
     // 싱글톤
     public static final TickSyncConfig INSTANCE = new TickSyncConfig();
 
@@ -29,6 +31,7 @@ public class TickSyncConfig {
                 this.isTickSyncOn = loaded.isTickSyncOn;
                 this.useAutoMargin = loaded.useAutoMargin;
                 this.useDebugScreen = loaded.useDebugScreen;
+                this.useNettyCriteria = loaded.useNettyCriteria;
             }
         } catch (IOException e) {
             e.printStackTrace();
