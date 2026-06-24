@@ -8,8 +8,8 @@
 		"LogGamja"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/mod/tick-sync",
+		"sources": "https://github.com/LogGamja/tick-sync-1.21.5"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/ticksync/icon.png",
