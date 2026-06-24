@@ -21,7 +21,7 @@ public abstract class GameMenuScreenMixin extends Screen {
     }
 
     @Inject(method = "init", at = @At("RETURN"))
-    private void addCustomButton(CallbackInfo ci) {
+    private void ticksync$addCustomButton(CallbackInfo ci) {
         MinecraftClient client = MinecraftClient.getInstance();
         LanguageManager lm = client.getLanguageManager();
 

@@ -26,12 +26,8 @@ import java.awt.*;
 public abstract class InGameHudMixin {
     @Shadow @Final private MinecraftClient client;
 
-    @Shadow
-    public abstract void tick(boolean paused);
-
-    // render(MatrixStack, float, CallbackInfo)
     @Inject(method = "render", at = @At("HEAD"))
-    private void onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+    private void ticksync$onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         if (client.player == null) return;
 
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;

@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "loggamja.sync.mixin",
+	"compatibilityLevel": "JAVA_21",
+
+	"client": [
+		"ClientPlayNetworkHandlerMixin",
+		"MinecraftClientMixin",
+		"GameMenuScreenMixin",
+		"InGameHudMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

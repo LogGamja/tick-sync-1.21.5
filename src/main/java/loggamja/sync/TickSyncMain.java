@@ -1,6 +1,6 @@
 package loggamja.sync;
 
-import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -19,8 +19,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-public class TickSyncMain implements ModInitializer {
-    public static final String MOD_ID = "tick-sync";
+public class TickSyncMain implements ClientModInitializer {
+    public static final String MOD_ID = "ticksync";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     boolean isTickRateChangedLastTick;
@@ -57,22 +57,32 @@ public class TickSyncMain implements ModInitializer {
     public static TickSyncMain INSTANCE;
 
     @Override
-    public void onInitialize() {
+    public void onInitializeClient() {
         INSTANCE = this;
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> this.onClientTickStart());
         ClientTickEvents.END_CLIENT_TICK.register(client -> this.onClientTickEnd());
 
-        // 접속 / 퇴장 시 틱 레이트 초기화
+        // 퇴장 시 틱 레이트 초기화
         ClientPlayConnectionEvents.DISCONNECT.register((client, handler) -> {
             setTickRate(20);
             serverTPS = 20;
             clientTPS = 20;
         });
-        ClientPlayConnectionEvents.INIT.register((client, handler) -> {
-            setTickRate(20);
+        // 접속 완료 후 초기화
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             serverTPS = 20;
             clientTPS = 20;
+            setTickRate(20);
+
+            // 직전 세션 상태가 새 서버로 새어 들어오는 것 방지
+            isTickRateChangedLastTick = false;
+            afterLazyPacketCooldown = 0;
+            lastServerPacketTime = System.currentTimeMillis();
+            lastSyncTime = System.currentTimeMillis();
+            packetDelayBuffer.clear();
+            packetRangeBuffer.clear();
+            fastPacketRangeBuffer.clear();
         });
 
         TickSyncConfig.INSTANCE.load();
@@ -81,24 +91,28 @@ public class TickSyncMain implements ModInitializer {
     public void onEntityPacket() {
         final long now = System.currentTimeMillis();
 
-        lastServerPacketTime = now;
-        isPacketReceivedThisTick = true;
+        // Netty가 아닌 렌더 스레드에서만 업데이트함
+        if (MinecraftClient.getInstance().isOnThread()) {
+            lastServerPacketTime = now;
+            isPacketReceivedThisTick = true;
+        }
+        else {
+            // Netty 스레드에서만 Range 버퍼 업데이트
+            if (!isPacketRangeUpdatedThisTick) {
+                final int delta = (int)(now - lastPacketRangeUpdatedTime);
 
-        // Range 버퍼 업데이트
-        if (!isPacketRangeUpdatedThisTick) {
-            final int delta = (int)(now - lastPacketRangeUpdatedTime);
-
-            if (0 < delta) {
-                final int halfDuration = (int)applyRatio(25);
-                final int normalDeviation = (delta % getTickDuration() + halfDuration) % getTickDuration() - halfDuration;
-                addToPacketRangeBuffer(normalDeviation);
+                if (0 < delta) {
+                    final int halfDuration = (int)applyRatio(25);
+                    final int normalDeviation = (delta % getTickDuration() + halfDuration) % getTickDuration() - halfDuration;
+                    addToPacketRangeBuffer(normalDeviation);
+                }
+                // 패킷이 드물게 올 경우
+                if (getTickDuration() * 2 <= delta) {
+                    afterLazyPacketCooldown = 20;
+                }
+                lastPacketRangeUpdatedTime = now;
+                isPacketRangeUpdatedThisTick = true;
             }
-            // 패킷이 드물게 올 경우
-            if (getTickDuration() * 2 <= delta) {
-                afterLazyPacketCooldown = 20;
-            }
-            lastPacketRangeUpdatedTime = now;
-            isPacketRangeUpdatedThisTick = true;
         }
     }
     int getTickDuration() { return (int)(1000 / serverTPS); }
