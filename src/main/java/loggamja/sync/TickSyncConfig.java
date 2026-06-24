@@ -28,20 +28,20 @@ public class TickSyncConfig {
         try (FileReader reader = new FileReader(CONFIG_FILE)) {
             TickSyncConfig loaded = GSON.fromJson(reader, TickSyncConfig.class);
             if (loaded != null) {
-                this.isTickSyncOn = loaded.isTickSyncOn;
-                this.useAutoMargin = loaded.useAutoMargin;
-                this.useDebugScreen = loaded.useDebugScreen;
+                this.isTickSyncOn    = loaded.isTickSyncOn;
+                this.useAutoMargin   = loaded.useAutoMargin;
+                this.useDebugScreen  = loaded.useDebugScreen;
                 this.useNettyCriteria = loaded.useNettyCriteria;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            TickSyncMain.LOGGER.error("Failed to load config", e);
         }
     }
     public void save() {
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
             GSON.toJson(this, writer);
         } catch (IOException e) {
-            e.printStackTrace();
+            TickSyncMain.LOGGER.error("Failed to save config", e);
         }
     }
 }

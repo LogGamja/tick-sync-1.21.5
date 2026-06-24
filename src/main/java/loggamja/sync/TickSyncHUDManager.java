@@ -7,15 +7,16 @@ public class TickSyncHUDManager {
     public int avgPacketDelay;
     public int syncTextAlpha = 20;
 
-    public float[] packetDelayHistogram = new float[TickSyncMain.samplingRange];
+    public float[] packetDelayHistogram = new float[TickSyncMain.SAMPLING_RANGE];
+
     // 싱글톤
     public static final TickSyncHUDManager INSTANCE = new TickSyncHUDManager();
 
-    public void updateHUD() {
-        packetRange = TickSyncMain.INSTANCE.packetRange;
-        avgPacketDelay = TickSyncMain.INSTANCE.avgPacketDelay;
+    public void updateHUD(int packetRange, int avgPacketDelay, boolean canSync) {
+        this.packetRange    = packetRange;
+        this.avgPacketDelay = avgPacketDelay;
+        this.canSync        = canSync;
 
-        canSync = TickSyncMain.INSTANCE.canSync();
         fadeSyncText();
         fadeDebugHistogram();
     }
@@ -23,12 +24,12 @@ public class TickSyncHUDManager {
         if (syncTextAlpha > 0) syncTextAlpha--;
     }
     void fadeDebugHistogram() {
-        for (int i = 0; i < TickSyncMain.samplingRange; i++) {
+        for (int i = 0; i < TickSyncMain.SAMPLING_RANGE; i++) {
             packetDelayHistogram[i] *= 0.95f;
         }
     }
     public void addToDebugHistogram(int packetDelay) {
-        if (0 < packetDelay && packetDelay < TickSyncMain.samplingRange) {
+        if (0 < packetDelay && packetDelay < TickSyncMain.SAMPLING_RANGE) {
             packetDelayHistogram[packetDelay]++;
         }
     }

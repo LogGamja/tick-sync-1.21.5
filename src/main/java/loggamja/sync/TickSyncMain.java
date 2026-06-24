@@ -40,14 +40,14 @@ public class TickSyncMain implements ClientModInitializer {
     public float serverTPS = 20;
 
     // 상수 정의
-    final int tickBufferSize = 10;
-    final int rangeBufferSize = 40;
-    final int fastRangeBufferSize = 10;
+    static final int TICK_BUFFER_SIZE = 10;
+    static final int RANGE_BUFFER_SIZE = 40;
+    static final int FAST_RANGE_BUFFER_SIZE = 10;
 
-    final int outlierLimit = 8;
-    final int syncThresholdOffset = 4;
+    static final int OUTLIER_LIMIT = 8;
+    static final int SYNC_THRESHOLD_OFFSET = 4;
 
-    public static final int samplingRange = 55;
+    public static final int SAMPLING_RANGE = 55;
 
     List<Integer> packetDelayBuffer = new ArrayList<>(Collections.nCopies(1, 12));
     List<Integer> packetRangeBuffer = new ArrayList<>(Collections.nCopies(1, 0));
@@ -139,13 +139,10 @@ public class TickSyncMain implements ClientModInitializer {
     }
     public void onClientTickStart() {
         if (isPlayingInGame()) {
-            //System.out.println("server TPS:" + serverTPS);
-            //System.out.println("client TPS:" + clientTPS);
-
             final long now = System.currentTimeMillis();
             final int packetDelay = (int)(now - lastServerPacketTime);
 
-            if (0 < packetDelay && packetDelay < applyRatio(samplingRange)) {
+            if (0 < packetDelay && packetDelay < applyRatio(SAMPLING_RANGE)) {
                 addToTickDeltaBuffer(packetDelay);
             }
             else {
@@ -153,12 +150,13 @@ public class TickSyncMain implements ClientModInitializer {
             }
 
             if (afterLazyPacketCooldown > 0) afterLazyPacketCooldown--;
-            TickSyncHUDManager.INSTANCE.addToDebugHistogram(packetDelay);
-            TickSyncHUDManager.INSTANCE.updateHUD();
 
-            avgPacketDelay = calculateMean(packetDelayBuffer);
-            packetRange = calculateRange(packetRangeBuffer, rangeBufferSize);
-            instantPacketRange = calculateRange(fastPacketRangeBuffer, fastRangeBufferSize);
+            avgPacketDelay    = calculateMean(packetDelayBuffer);
+            packetRange       = calculateRange(packetRangeBuffer, RANGE_BUFFER_SIZE);
+            instantPacketRange = calculateRange(fastPacketRangeBuffer, FAST_RANGE_BUFFER_SIZE);
+
+            TickSyncHUDManager.INSTANCE.addToDebugHistogram(packetDelay);
+            TickSyncHUDManager.INSTANCE.updateHUD(packetRange, avgPacketDelay, canSync());
         }
         isPacketRangeUpdatedThisTick = false;
         isPacketReceivedThisTick = false;
@@ -166,18 +164,18 @@ public class TickSyncMain implements ClientModInitializer {
     void addToTickDeltaBuffer(int newDelta) {
         packetDelayBuffer.add(newDelta);
 
-        if (packetDelayBuffer.size() > tickBufferSize) {
+        if (packetDelayBuffer.size() > TICK_BUFFER_SIZE) {
             packetDelayBuffer.removeFirst();
         }
     }
     void addToPacketRangeBuffer(int newDelta) {
-        if (Math.abs(newDelta) <= outlierLimit) packetRangeBuffer.add(newDelta);
-        if (packetRangeBuffer.size() > rangeBufferSize) {
+        if (Math.abs(newDelta) <= OUTLIER_LIMIT) packetRangeBuffer.add(newDelta);
+        if (packetRangeBuffer.size() > RANGE_BUFFER_SIZE) {
             packetRangeBuffer.removeFirst();
         }
 
         fastPacketRangeBuffer.add(newDelta);
-        if (fastPacketRangeBuffer.size() > fastRangeBufferSize) {
+        if (fastPacketRangeBuffer.size() > FAST_RANGE_BUFFER_SIZE) {
             fastPacketRangeBuffer.removeFirst();
         }
     }
@@ -227,8 +225,8 @@ public class TickSyncMain implements ClientModInitializer {
     boolean isWeirdSyncOccurred() {
         if (packetDelayBuffer.isEmpty()) return false;
 
-        final int range = calculateRange(packetDelayBuffer, tickBufferSize);
-        return (packetDelayBuffer.size() >= tickBufferSize) && range > (applyRatio(35));
+        final int range = calculateRange(packetDelayBuffer, TICK_BUFFER_SIZE);
+        return (packetDelayBuffer.size() >= TICK_BUFFER_SIZE) && range > (applyRatio(35));
     }
     void fixWeirdSync() {
         if (packetDelayBuffer.isEmpty()) return;
@@ -242,7 +240,7 @@ public class TickSyncMain implements ClientModInitializer {
         TickSyncHUDManager.INSTANCE.syncTextAlpha = 10;
     }
     int getPacketMargin() {
-        final int max = outlierLimit * 2;
+        final int max = OUTLIER_LIMIT * 2;
         final int min = afterLazyPacketCooldown > 0 ? 8 : 6;
         return cfg.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
     }
@@ -250,7 +248,7 @@ public class TickSyncMain implements ClientModInitializer {
         return getThreshold() < avgPacketDelay;
     }
     int getThreshold() {
-        final int threshold = (int)applyRatio(getPacketMargin()) + syncThresholdOffset;
+        final int threshold = (int)applyRatio(getPacketMargin()) + SYNC_THRESHOLD_OFFSET;
 
         if (threshold < getFrameDuration()) {
             return (int)(getFrameDuration() * 1.5f);
@@ -284,8 +282,8 @@ public class TickSyncMain implements ClientModInitializer {
     }
     void shiftNextTickDuration(int term) {
         // 0/음수 나눗셈 방지: 다음 틱 길이(ms)에 최소값을 보장 (최대 200TPS)
-        final int minTickDuration = 5;
-        final int nextTickDuration = Math.max(minTickDuration, term + getTickDuration());
+        final int MIN_TICK_DURATION = 5;
+        final int nextTickDuration = Math.max(MIN_TICK_DURATION, term + getTickDuration());
         final float tickRate = 1000f / nextTickDuration;
 
         setTickRate(tickRate);
@@ -321,6 +319,7 @@ public class TickSyncMain implements ClientModInitializer {
             // Fabric API의 Version 클래스는 비교 가능
             return current.compareTo(target) >= 0;
         } catch (VersionParsingException e) {
+            LOGGER.error("Failed to parse version string: {}", versionString, e);
             return false;
         }
     }
