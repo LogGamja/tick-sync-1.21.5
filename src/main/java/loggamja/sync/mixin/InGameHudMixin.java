@@ -79,7 +79,7 @@ public abstract class InGameHudMixin {
             int c3fg = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3g, 0.0), 1.0/2.2)), 0, 255);
             int c3fb = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3b, 0.0), 1.0/2.2)), 0, 255);
             int c3color = 0xFF000000 | (c3fr << 16) | (c3fg << 8) | c3fb;
-            context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3color);
+            context.drawText(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3color, false);
         }
     }
 }
