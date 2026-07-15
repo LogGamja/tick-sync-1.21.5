@@ -1,18 +1,15 @@
 package loggamja.sync.mixin;
 
 import loggamja.sync.TickSyncSetting;
-import net.minecraft.client.MinecraftClient;
+import loggamja.sync.api.TickSyncAPI;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.resource.language.LanguageManager;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.minecraft.client.gui.screen.GameMenuScreen;
-
-import java.util.Objects;
 
 @Mixin(GameMenuScreen.class)
 public abstract class GameMenuScreenMixin extends Screen {
@@ -22,17 +19,12 @@ public abstract class GameMenuScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("RETURN"))
     private void ticksync$addCustomButton(CallbackInfo ci) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        LanguageManager lm = client.getLanguageManager();
+        if (TickSyncAPI.isMenuButtonHidden()) return;
 
-        String buttonName = "TickSync Setting";
-        if (Objects.equals(lm.getLanguage(), "ko_kr")) {
-            buttonName = "틱 동기화 설정";
-        }
         this.addDrawableChild(
-                ButtonWidget.builder(Text.literal(buttonName), button -> {
-                            Objects.requireNonNull(this.client);
-                            this.client.setScreen(new TickSyncSetting());
+                ButtonWidget.builder(Text.translatable("ticksync.setting.menu_button"), button -> {
+                            assert this.client != null;
+                            this.client.setScreen(new TickSyncSetting(this));
                         })
                         .position(10, 10)
                         .size(100, 20)
@@ -40,4 +32,3 @@ public abstract class GameMenuScreenMixin extends Screen {
         );
     }
 }
-

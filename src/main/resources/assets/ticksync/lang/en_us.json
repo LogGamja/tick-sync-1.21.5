@@ -1,0 +1,21 @@
+{
+  "ticksync.setting.title": "Setting",
+  "ticksync.setting.menu_button": "TickSync Setting",
+  "ticksync.setting.ok": "OK",
+
+  "ticksync.option.tick_sync.off": "TickSync: OFF",
+  "ticksync.option.tick_sync.on": "TickSync: ON",
+  "ticksync.tooltip.tick_sync": "Toggles all functions of TickSync.",
+
+  "ticksync.option.auto_margin.fixed": "Margin: Fixed(10ms)",
+  "ticksync.option.auto_margin.auto": "Margin: Auto(default)",
+  "ticksync.tooltip.auto_margin": "Select control method related with internet quality.",
+
+  "ticksync.option.netty_criteria.render": "Thread: Render",
+  "ticksync.option.netty_criteria.netty": "Thread: Netty",
+  "ticksync.tooltip.netty_criteria": "Select 'Render' unless your frame rate is terribly low.",
+
+  "ticksync.option.debug_screen.off": "Debug: OFF",
+  "ticksync.option.debug_screen.on": "Debug: ON",
+  "ticksync.tooltip.debug_screen": "Toggles debug screen at the corner."
+}

@@ -53,7 +53,6 @@ public class TickSyncMain implements ClientModInitializer {
     List<Integer> packetRangeBuffer = new ArrayList<>(Collections.nCopies(1, 0));
     List<Integer> fastPacketRangeBuffer = new ArrayList<>(Collections.nCopies(1, 0));
 
-    static TickSyncConfig cfg;
     public static TickSyncMain INSTANCE;
 
     @Override
@@ -86,21 +85,20 @@ public class TickSyncMain implements ClientModInitializer {
         });
 
         TickSyncConfig.INSTANCE.load();
-        cfg = TickSyncConfig.INSTANCE;
     }
     public void onEntityPacket() {
         final long now = System.currentTimeMillis();
 
         if (MinecraftClient.getInstance().isOnThread()) {
             // 기본값: Render 스레드의 시간 사용
-            if (!cfg.useNettyCriteria) {
+            if (!TickSyncConfig.INSTANCE.useNettyCriteria) {
                 lastServerPacketTime = now;
                 isPacketReceivedThisTick = true;
             }
         }
         else {
             // 실험적 옵션 활성화: Netty의 시간 사용
-            if (cfg.useNettyCriteria) {
+            if (TickSyncConfig.INSTANCE.useNettyCriteria) {
                 lastServerPacketTime = now;
                 isPacketReceivedThisTick = true;
             }
@@ -131,7 +129,7 @@ public class TickSyncMain implements ClientModInitializer {
         return client.world != null && client.player != null && !client.isPaused();
     }
     public boolean canSync() {
-        if (cfg.useAutoMargin) return serverTPS <= 20 && getCurrentFPS() > 40 && instantPacketRange < applyRatio(25);
+        if (TickSyncConfig.INSTANCE.useAutoMargin) return serverTPS <= 20 && getCurrentFPS() > 40 && instantPacketRange < applyRatio(25);
         else                   return serverTPS <= 20 && getCurrentFPS() > 40;
     }
     int getCurrentFPS() {
@@ -213,7 +211,7 @@ public class TickSyncMain implements ClientModInitializer {
         }
         final long now = System.currentTimeMillis();
 
-        if (cfg.isTickSyncOn && isPlayingInGame() && canSync() && (now - lastSyncTime) > 1000) {
+        if (TickSyncConfig.INSTANCE.isTickSyncOn && isPlayingInGame() && canSync() && (now - lastSyncTime) > 1000) {
             if (isWeirdSyncOccurred()) {
                 fixWeirdSync();
             }
@@ -242,7 +240,7 @@ public class TickSyncMain implements ClientModInitializer {
     int getPacketMargin() {
         final int max = OUTLIER_LIMIT * 2;
         final int min = afterLazyPacketCooldown > 0 ? 8 : 6;
-        return cfg.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
+        return TickSyncConfig.INSTANCE.useAutoMargin ? Math.clamp(packetRange, min, max) : 10;
     }
     boolean isTickSyncRequired() {
         return getThreshold() < avgPacketDelay;
@@ -270,11 +268,11 @@ public class TickSyncMain implements ClientModInitializer {
     }
     int quantizeToFrame(float margin) {
         if (margin < getFrameDuration()) return (int)getFrameDuration();
-        if (cfg.useAutoMargin) return (int)(Math.floor(margin / getFrameDuration()) * getFrameDuration());
+        if (TickSyncConfig.INSTANCE.useAutoMargin) return (int)(Math.floor(margin / getFrameDuration()) * getFrameDuration());
         else                   return (int)(Math.round(margin / getFrameDuration()) * getFrameDuration());
     }
     int getMatchSyncOffset() {
-        if (!cfg.useAutoMargin) return 0;
+        if (!TickSyncConfig.INSTANCE.useAutoMargin) return 0;
 
         if (getCurrentFPS() > 240) return 0;
         if (getCurrentFPS() > 120) return 1;

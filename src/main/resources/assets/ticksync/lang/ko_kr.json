@@ -1,0 +1,21 @@
+{
+  "ticksync.setting.title": "설정",
+  "ticksync.setting.menu_button": "틱 동기화 설정",
+  "ticksync.setting.ok": "확인",
+
+  "ticksync.option.tick_sync.off": "틱 동기화: 꺼짐",
+  "ticksync.option.tick_sync.on": "틱 동기화: 켜짐",
+  "ticksync.tooltip.tick_sync": "모든 틱 동기화 기능을 켜거나 끕니다.",
+
+  "ticksync.option.auto_margin.fixed": "정확도: 고정(10ms)",
+  "ticksync.option.auto_margin.auto": "정확도: 자동(기본)",
+  "ticksync.tooltip.auto_margin": "인터넷 품질과 관련된 제어 방법을 결정합니다.",
+
+  "ticksync.option.netty_criteria.render": "기준 스레드: Render",
+  "ticksync.option.netty_criteria.netty": "기준 스레드: Netty",
+  "ticksync.tooltip.netty_criteria": "프레임률이 끔찍하게 낮은 경우가 아니면 Render를 선택하세요.",
+
+  "ticksync.option.debug_screen.off": "디버그: 꺼짐",
+  "ticksync.option.debug_screen.on": "디버그: 켜짐",
+  "ticksync.tooltip.debug_screen": "우상단 디버그 화면을 켜거나 끕니다."
+}
