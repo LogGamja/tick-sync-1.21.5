@@ -260,7 +260,8 @@ public class TickSyncMain implements ClientModInitializer {
         lastSyncTime = System.currentTimeMillis();
         int tickToPush = (getTickDuration() - avgPacketDelay) + quantizeToFrame(applyRatio(getPacketMargin() + getMatchSyncOffset()));
 
-        if (tickToPush > getTickDuration() / 2)
+        // '기본' 모드는 가속(pull) 없이 항상 늦추기만 해서 싱크를 맞춘다
+        if (TickSyncConfig.INSTANCE.useFastSync && tickToPush > getTickDuration() / 2)
             tickToPush -= getTickDuration(); // pull tick
 
         shiftNextTickDuration(tickToPush);

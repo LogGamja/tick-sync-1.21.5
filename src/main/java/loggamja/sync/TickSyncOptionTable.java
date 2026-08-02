@@ -36,6 +36,13 @@ public final class TickSyncOptionTable {
                     v -> TickSyncConfig.INSTANCE.useNettyCriteria = v != 0
             ),
             new ToggleDef(
+                    "sync_mode",
+                    new String[]{"ticksync.option.sync_mode.default", "ticksync.option.sync_mode.fast"},
+                    "ticksync.tooltip.sync_mode",
+                    () -> TickSyncConfig.INSTANCE.useFastSync ? 1 : 0,
+                    v -> TickSyncConfig.INSTANCE.useFastSync = v != 0
+            ),
+            new ToggleDef(
                     "debug_screen",
                     new String[]{"ticksync.option.debug_screen.off", "ticksync.option.debug_screen.on"},
                     "ticksync.tooltip.debug_screen",

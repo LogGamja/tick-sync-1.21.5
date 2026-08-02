@@ -23,6 +23,7 @@ public class TickSyncConfig {
     public boolean useDebugScreen = false;
 
     public boolean useNettyCriteria = false;
+    public boolean useFastSync = false;
 
     // 싱글톤 (load()가 역직렬화된 인스턴스로 통째로 교체하므로 final이 아님)
     public static TickSyncConfig INSTANCE = new TickSyncConfig();

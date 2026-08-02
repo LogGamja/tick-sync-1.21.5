@@ -15,6 +15,10 @@
   "ticksync.option.netty_criteria.netty": "Thread: Netty",
   "ticksync.tooltip.netty_criteria": "Select 'Render' unless your frame rate is terribly low.",
 
+  "ticksync.option.sync_mode.default": "Sync: Safe",
+  "ticksync.option.sync_mode.fast": "Sync: Fast",
+  "ticksync.tooltip.sync_mode": "Fast can speed up ticks to catch up, default only slows ticks down.",
+
   "ticksync.option.debug_screen.off": "Debug: OFF",
   "ticksync.option.debug_screen.on": "Debug: ON",
   "ticksync.tooltip.debug_screen": "Toggles debug screen at the corner."
