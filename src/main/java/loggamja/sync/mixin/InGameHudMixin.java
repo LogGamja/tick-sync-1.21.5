@@ -3,16 +3,11 @@ package loggamja.sync.mixin;
 import loggamja.sync.TickSyncHUDManager;
 import loggamja.sync.TickSyncMain;
 import loggamja.sync.TickSyncConfig;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-//import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.render.RenderTickCounter;
 
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,18 +15,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.awt.*;
-
 @Mixin(InGameHud.class)
 public abstract class InGameHudMixin {
     @Shadow @Final private MinecraftClient client;
 
-    @Shadow
-    public abstract void tick(boolean paused);
-
-    // render(MatrixStack, float, CallbackInfo)
     @Inject(method = "render", at = @At("HEAD"))
-    private void onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+    private void ticksync$onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         if (client.player == null) return;
 
         TickSyncConfig cfg = TickSyncConfig.INSTANCE;
@@ -45,14 +34,14 @@ public abstract class InGameHudMixin {
         int x4 = client.getWindow().getScaledWidth() - space;
         int y4 = space;
         x4 -= client.textRenderer.getWidth(text4);
-        context.drawTextWithShadow(client.textRenderer, text4, x4, y4, 0xFFFF00);
+        context.drawTextWithShadow(client.textRenderer, text4, x4, y4, 0xFFFFFF00);
 
         // 딜레이
         String text = "Tick Delay: " + TickSyncHUDManager.INSTANCE.avgPacketDelay + "ms";
         int x = client.getWindow().getScaledWidth() - space;
         int y = space + term;
         x -= client.textRenderer.getWidth(text);
-        context.drawTextWithShadow(client.textRenderer, text, x, y, 0x00FFFF);
+        context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFF00FFFF);
 
         // 싱크가 불가능하다고 알리는 텍스트
         if (!TickSyncHUDManager.INSTANCE.canSync) {
@@ -60,7 +49,7 @@ public abstract class InGameHudMixin {
             int x3 = client.getWindow().getScaledWidth() - 90;
             int y3 = space + term;
             x3 -= client.textRenderer.getWidth(text3);
-            context.drawTextWithShadow(client.textRenderer, text3, x3, y3, 0xFF0000);
+            context.drawTextWithShadow(client.textRenderer, text3, x3, y3, 0xFFFF0000);
         }
 
         // 싱크 중임을 알리는 텍스트
@@ -69,12 +58,12 @@ public abstract class InGameHudMixin {
             int x3 = client.getWindow().getScaledWidth() - 90;
             int y3 = space + term;
             x3 -= client.textRenderer.getWidth(text3);
-            context.drawTextWithShadow(client.textRenderer, text3, x3, y3, 0x00FFFF);
+            context.drawTextWithShadow(client.textRenderer, text3, x3, y3, 0xFF00FFFF);
         }
 
         // histogram by towercrain
         var histogramHeight = space + term * 2;
-        var histogramSize = TickSyncMain.INSTANCE.samplingRange;
+        var histogramSize = TickSyncMain.SAMPLING_RANGE;
         int x2 = client.getWindow().getScaledWidth() - space;
         x2 -= histogramSize;
 
@@ -89,28 +78,8 @@ public abstract class InGameHudMixin {
             int c3fr = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3r, 0.0), 1.0/2.2)), 0, 255);
             int c3fg = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3g, 0.0), 1.0/2.2)), 0, 255);
             int c3fb = Math.clamp(Math.round(255.0 * Math.pow(Math.max(c3b, 0.0), 1.0/2.2)), 0, 255);
-            context.drawTextWithShadow(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3fr<<16|c3fg<<8|c3fb);
+            int c3color = 0xFF000000 | (c3fr << 16) | (c3fg << 8) | c3fb;
+            context.drawText(client.textRenderer, "|", x2 + histogramSize - (i + 1), histogramHeight, c3color, false);
         }
-
-        //final Identifier K_HUD_ID =Identifier.of("khudexample", "k_hud");
-
-        //HudElementRegistry.attachElementBefore(
-        //
-        //        VanillaHudElements.CHAT,
-        //        K_HUD_ID,
-        //        new HudElement() {
-        //            @Override
-        //            public void render(DrawContext context, RenderTickCounter tickCounter) {
-        //                MinecraftClient mc = MinecraftClient.getInstance();
-        //                int x = 10;
-        //                int y = 10;
-        //                int color = 0xFFFFFFFF; // 흰색
-        //                Text t = Text.literal("ㅋ");
-        //                context.drawTextWithShadow(mc.textRenderer, t, x, y, color);
-        //            }
-        //        }
-        //);
-
     }
 }
-
