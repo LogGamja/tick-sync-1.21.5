@@ -24,7 +24,7 @@ public abstract class GameMenuScreenMixin extends Screen {
         this.addRenderableWidget(
                 Button.builder(Component.translatable("ticksync.setting.menu_button"), button -> {
                             assert this.minecraft != null;
-                            this.minecraft.setScreen(new TickSyncSetting(this));
+                            this.minecraft.setScreenAndShow(new TickSyncSetting(this));
                         })
                         .pos(10, 10)
                         .size(100, 20)

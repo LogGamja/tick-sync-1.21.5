@@ -1,6 +1,6 @@
 package loggamja.sync;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.Button;
@@ -57,15 +57,15 @@ public class TickSyncSetting extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        context.drawCenteredString(this.font, Component.translatable("ticksync.setting.title"), this.width / 2, 20, 0xFFFFFF);
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        context.centeredText(this.font, Component.translatable("ticksync.setting.title"), this.width / 2, 20, 0xFFFFFF);
+        super.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     @Override
     public void onClose() {
         assert this.minecraft != null;
-        this.minecraft.setScreen(parent);
+        this.minecraft.setScreenAndShow(parent);
         TickSyncConfig.INSTANCE.save();
     }
 }
