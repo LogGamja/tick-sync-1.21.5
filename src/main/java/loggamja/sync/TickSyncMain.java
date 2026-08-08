@@ -8,9 +8,9 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
 import net.fabricmc.loader.api.metadata.ModMetadata;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.world.tick.TickManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.TickRateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,7 @@ public class TickSyncMain implements ClientModInitializer {
     public void onEntityPacket() {
         final long now = System.currentTimeMillis();
 
-        if (MinecraftClient.getInstance().isOnThread()) {
+        if (Minecraft.getInstance().isSameThread()) {
             // 기본값: Render 스레드의 시간 사용
             if (!TickSyncConfig.INSTANCE.useNettyCriteria) {
                 lastServerPacketTime = now;
@@ -125,15 +125,15 @@ public class TickSyncMain implements ClientModInitializer {
     float applyRatio(float x) { return x * (20 / serverTPS); }
 
     boolean isPlayingInGame() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        return client.world != null && client.player != null && !client.isPaused();
+        Minecraft client = Minecraft.getInstance();
+        return client.level != null && client.player != null && !client.isPaused();
     }
     public boolean canSync() {
         if (TickSyncConfig.INSTANCE.useAutoMargin) return serverTPS <= 20 && getCurrentFPS() > 40 && instantPacketRange < applyRatio(25);
         else                   return serverTPS <= 20 && getCurrentFPS() > 40;
     }
     int getCurrentFPS() {
-        return MinecraftClient.getInstance().getCurrentFps();
+        return Minecraft.getInstance().getFps();
     }
     public void onClientTickStart() {
         if (isPlayingInGame()) {
@@ -296,11 +296,11 @@ public class TickSyncMain implements ClientModInitializer {
     void setTickRate(float tickRate) {
         clientTPS = tickRate;
 
-        final MinecraftClient client = MinecraftClient.getInstance();
-        final ClientWorld world = client.world;
-        if (world != null) {
-            TickManager tickManager = world.getTickManager();
-            tickManager.setTickRate(tickRate);
+        final Minecraft client = Minecraft.getInstance();
+        final ClientLevel level = client.level;
+        if (level != null) {
+            TickRateManager tickRateManager = level.tickRateManager();
+            tickRateManager.setTickRate(tickRate);
         }
     }
     // -------------
