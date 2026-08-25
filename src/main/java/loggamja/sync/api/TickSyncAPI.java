@@ -54,6 +54,6 @@ public final class TickSyncAPI {
     // setScreen은 메인 스레드 전용이므로 마샬링한다. currentScreen은 실행 시점(메인 스레드)에 읽어 정확한 화면을 parent로 삼는다
     public static void openSettings() {
         Minecraft client = Minecraft.getInstance();
-        client.execute(() -> client.setScreenAndShow(new TickSyncSetting(client.gui.screen())));
+        client.execute(() -> client.setScreenAndShow(new TickSyncSetting(client.screen)));
     }
 }
